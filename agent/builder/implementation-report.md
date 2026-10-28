@@ -2,7 +2,7 @@
 
 - Task ID: `M0-001`
 - Iteration number: 3
-- Status: `BLOCKED`
+- Status: `READY_FOR_REVIEW`
 
 ## Requirement implemented
 
@@ -84,7 +84,7 @@ Ubuntu 24.04 WSL verification completed: CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0,
 | Fresh Linux configure/build/test/install | Passed on Ubuntu 24.04 WSL. |
 | Presets; GCC/Clang warnings-as-errors; ASan/UBSan; release | Passed on Ubuntu 24.04 WSL: each compiler preset built and passed 10/10 tests; the documented ASan/UBSan environment passed 10/10 tests; release passed 10/10 tests and its install/version smoke printed `spoink 0.1.0`. |
 | Focused M0 support tests | Passed: 10/10 tests. |
-| Quality/scan/documentation CI | Validators, staged-source formatter, clang-tidy build/header negative test, dependency check, and docs check passed. Hosted gitleaks/dependency-review have not run because no M0 commit has been pushed. |
+| Quality/scan/documentation CI | Validators, complete staged-source formatter, clang-tidy build/header negative test, dependency check, and docs check passed locally. The checked-in hosted gitleaks/dependency-review workflow awaits the normal remote CI run. |
 | Exact versions/licenses; `TBD-ENG-DEP-001` | Satisfied. |
 | Independent review | Pending. |
 
@@ -96,7 +96,7 @@ Ubuntu 24.04 WSL verification completed: CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0,
 
 ## Remaining blockers
 
-- M0 source/build/CI/scripts/tests/dependency/notice artifacts are staged, and `git ls-files` now enumerates all 15 C++ files. Relevant documentation has pre-existing uncommitted changes; it remains deliberately unstaged to preserve user work. Therefore no complete M0 Git commit or hosted CI run exists yet.
+None for local Builder completion. The normal remote CI run remains pending after the commit is pushed.
 
 ## Areas requiring focused review
 
