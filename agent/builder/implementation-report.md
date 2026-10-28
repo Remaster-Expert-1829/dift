@@ -1,19 +1,19 @@
 # Implementation Report
 
 - Task ID: `M0-001`
-- Iteration number: 5
+- Iteration number: 6
 - Status: `READY_FOR_REVIEW`
 
 ## Requirement implemented
 
-Iterations 4 and 5 repair Independent Review iteration 7: every affected GitHub Actions job adds `/usr/bin` through `GITHUB_PATH` in one step, then separately asserts `command -v cmake` and `command -v ninja` before exact toolchain validation and all substantive work. This selects CMake 3.28.3 and Ninja 1.11.1 instead of the runner toolcache. The pull-request workflow also has the narrowly scoped `pull-requests: write` permission required by GitHub's dependency-review action. M0 remains a C++17 build and quality foundation only: no transfer, protocol, storage, TLS, CDC, compression, scheduler, telemetry, or benchmark behavior was introduced.
+Iterations 4 through 6 repair Independent Review iterations 7 and 8: every affected GitHub Actions job adds `/usr/bin` through `GITHUB_PATH` in one step, then separately asserts `command -v cmake` and `command -v ninja` before exact toolchain validation and all substantive work. This selects CMake 3.28.3 and Ninja 1.11.1 instead of the runner toolcache. The workflow now has only the read-only `contents: read` default; basic dependency-review requires no pull-request write permission. Hosted logs confirm that every job receives only `Contents: read` and `Metadata: read`. M0 remains a C++17 build and quality foundation only: no transfer, protocol, storage, TLS, CDC, compression, scheduler, telemetry, or benchmark behavior was introduced.
 
 ## Files created, modified, or removed
 
 - Created build/dependency files: `CMakeLists.txt`, `CMakePresets.json`, `vcpkg.json`, `vcpkg-configuration.json`, and `cmake/bootstrap-vcpkg.sh`.
 - Created support code: `include/spoink/support/*`, `src/support/*`, `src/cli/main.cpp`, and five `tests/unit/*_test.cpp` files.
 - Created quality artifacts: `.clang-format`, `.clang-tidy`, `.github/workflows/ci.yml`, `scripts/check-dependencies.py`, `scripts/check-docs.py`, and `third_party/NOTICE.md`.
-- Modified `.github/workflows/ci.yml` in repair commit `8146ad23d1338d6f5f09ae89b35ce97945393a99` to select and assert `/usr/bin/cmake` and `/usr/bin/ninja` before the exact-version gate, and in `2c874026f664d17566f8e73700e33de1324df8ea` to grant dependency-review its required PR-only permission.
+- Modified `.github/workflows/ci.yml` in repair commit `8146ad23d1338d6f5f09ae89b35ce97945393a99` to select and assert `/usr/bin/cmake` and `/usr/bin/ninja` before the exact-version gate. Iteration 6 repair commit `ca1b1444815b6676f0e5dd2415b68071117dd3fb` removes the unnecessary workflow-wide `pull-requests: write` permission and retains only `contents: read`.
 - Added validator tests: `tests/scripts/test_check_toolchain.py` and `tests/scripts/test_check_docs.py`, plus `scripts/verify-clang-tidy-header-gate.py`.
 - Updated `.gitignore`; M0-specific additions to engineering, operations, traceability, consistency, and readiness documentation; replaced this stale report.
 - Existing dirty documentation changes were preserved. Several modified documentation files predated this iteration.
@@ -61,6 +61,7 @@ None. Empty future libraries and placeholder APIs were intentionally omitted. TS
 | `cmake --preset ci-gcc && cmake --build --preset ci-gcc && ctest --preset ci-gcc` | Passed: 10/10 tests with GCC 13.3.0. |
 | GitHub Actions push run `40687177678` | Passed: repository-checks, ci-gcc, ci-clang, release, clang-tidy/header gate, ASan/UBSan, and secrets. https://github.com/Remaster-Expert-1829/dift/actions/runs/40687177678 |
 | GitHub Actions pull-request run `40688579416` (rerun after Dependency Graph was enabled) | Passed: dependency-review, repository-checks, ci-gcc, ci-clang, release, clang-tidy/header gate, ASan/UBSan, and secrets. Each non-meta job completed its configure/build/test or analysis work after the `/usr/bin` path assertion. https://github.com/Remaster-Expert-1829/dift/actions/runs/40688579416 |
+| GitHub Actions pull-request run `40737223533` | Passed: dependency-review, repository-checks, ci-gcc, ci-clang, release, clang-tidy/header gate, ASan/UBSan, and secrets. Raw job logs show only `Contents: read` and `Metadata: read` for every job; no job received `PullRequests: write`. https://github.com/Remaster-Expert-1829/dift/actions/runs/40737223533 |
 | JSON parsing of CMake/vcpkg configuration | Passed. |
 | `git diff --check` | Passed. |
 
@@ -86,7 +87,7 @@ Ubuntu 24.04 WSL verification completed: CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0,
 | Fresh Linux configure/build/test/install | Passed on Ubuntu 24.04 WSL. |
 | Presets; GCC/Clang warnings-as-errors; ASan/UBSan; release | Passed on Ubuntu 24.04 WSL: each compiler preset built and passed 10/10 tests; the documented ASan/UBSan environment passed 10/10 tests; release passed 10/10 tests and its install/version smoke printed `spoink 0.1.0`. |
 | Focused M0 support tests | Passed: 10/10 tests. |
-| Quality/scan/documentation CI | Hosted push run 40687177678 and PR run 40688579416 passed repository checks (dependency, exact tools, validator tests, docs, formatting), GCC/Clang/release builds/tests, clang-tidy/header gate, ASan/UBSan, gitleaks, and dependency-review. |
+| Quality/scan/documentation CI | Hosted push run 40687177678 and PR runs 40688579416/40737223533 passed repository checks (dependency, exact tools, validator tests, docs, formatting), GCC/Clang/release builds/tests, clang-tidy/header gate, ASan/UBSan, gitleaks, and dependency-review. The final permission-repair run proves every job has only read/minimum token access. |
 | Exact versions/licenses; `TBD-ENG-DEP-001` | Satisfied. |
 | Independent review | Pending. |
 
