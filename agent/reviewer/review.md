@@ -1,137 +1,141 @@
 # Independent Review
 
 - Task ID: M0-001
-- Builder iteration reviewed: 2
-- Review iteration: 5
-- Verdict: FAIL
+- Builder iteration reviewed: 6
+- Review iteration: 9
+- Reviewed remote main: 863bebeb8c69ccd08139994f870f0c8e6f2eb493
+- Hosted PR head: 44e2b14fabfcf577388b38c91b8ef61ef175b6bf (tree-identical to reviewed remote main)
+- Verdict: APPROVED
 
 ## Requirement coverage
 
-1. Fresh Linux configure/build/test/install: PASS. The documented Ubuntu 24.04 sequence completed in an isolated copy. The developer build completed, all 10 tests passed, installation produced only bin/spoink, and the installed binary printed spoink 0.1.0.
-2. Developer, CI, sanitizer, and release presets: PASS. dev, ci-gcc, ci-clang, sanitize, clang-tidy, and release all configured and built on Ubuntu 24.04. Every preset with tests passed 10/10 tests.
-3. GCC/Clang C++17 warnings-as-errors: PASS. GCC 13.3.0 and Clang 18.1.3 builds used C++17 and the checked warning set with -Werror.
-4. M0 support foundations and focused tests: PASS. PeerId is a strong 32-byte type, TransferId is a distinct strong 16-byte type, RequestId wraps uint64_t, and direct compile-time/runtime tests cover those contracts. Error/result, checked arithmetic, hash conversion, fake time, and owned-resource cleanup tests pass under both compilers and ASan/UBSan.
-5. Quality and CI gates: FAIL. The clang-tidy preset now passes and its header filter covers absolute project-header paths, but global aNy_CasE settings disable three naming categories without the required suppression record. Documentation link and anchor checking works, but meaningful ID validation remains absent. The workflow formatting command examines zero files in this checkout because all 15 C++ files are untracked; checking those files directly reveals a clang-format 18 failure.
-6. Exact versions, dependency lock, and licenses: FAIL. The vcpkg commit/baseline, Catch2 3.11.0#0 override, and third-party notices are consistent, and the project-license claim was removed. However, scripts/check-toolchain.py uses substring matching and accepts deliberately wrong versions, while CMakePresets.json declares 3.28.0 instead of the 3.28.3 project minimum.
-7. Scope boundary: PASS. No M1+ transfer, persistence, protocol, networking, TLS, compression, scheduler, telemetry, benchmark, schema, or migration behavior was introduced.
-8. Independent review: completed with FAIL.
-
-The implementation repairs several Review iteration 4 findings, but acceptance criteria 5 and 6 remain unsatisfied.
+1. Fresh Linux configure/build/test/install: PASS. Build, dependency, source, and test inputs are unchanged from the complete Review iterations 7 and 8 Linux verification. Final PR-head run 40738534004 independently bootstrapped, configured, built, passed tests, installed the release executable, and printed spoink 0.1.0.
+2. Developer, CI, sanitizer, analysis, and release presets: PASS. Final PR-head run 40738534004 completed GCC, Clang, release/install smoke, clang-tidy/header gate, and ASan/UBSan jobs successfully.
+3. GCC/Clang C++17 warnings-as-errors: PASS. Hosted logs show GNU 13.3.0 and Clang 18.1.3 selected, with 10/10 tests passing in both compiler jobs. The checked CMake configuration still requires C++17 and applies the reviewed warning set plus -Werror.
+4. M0 support foundations: PASS. PeerId remains a distinct tagged 32-byte identifier, TransferId a distinct tagged 16-byte identifier, and RequestId a distinct uint64_t wrapper. Direct compile-time and runtime contract tests remain present and passed.
+5. Quality and hosted CI gates: PASS. Repository checks, formatting, validator unit tests, documentation validation, dependency review, secret scan, clang-tidy/header gate, ASan/UBSan, compiler builds/tests, and release install smoke all completed successfully in the hosted PR run.
+6. Exact tools, dependency lock, and notices: PASS. Every relevant hosted job asserted /usr/bin/cmake and /usr/bin/ninja before exact validation and substantive work. The approved CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0, LLVM 18.1.3, vcpkg baseline 74e6536215718009aae747d86d84b78376bf9e09, Catch2 3.11.0#0, and license records are unchanged.
+7. Documentation validation and alignment: PASS. The focused validator tests remain 9/9, check-docs passes, and the documentation continues to treat OpenSSL, SQLite, LZ4, and Zstd as future dependencies.
+8. Reviewer iteration 7 path-selection repair: PASS. .github/workflows/ci.yml installs tools, writes /usr/bin to GITHUB_PATH in a separate step, then asserts command -v cmake and command -v ninja before validation and substantive work.
+9. Dependency-review permission scope: PASS. The workflow-level permissions contain only contents: read, no workflow or job grants pull-requests: write, and raw logs for all eight jobs in run 40737223533 show only Contents: read and Metadata: read. Basic dependency-review and every other job passed with that read-only token.
+10. M0 scope boundary: PASS. Source inventory and targeted searches found no transfer engine, persistence, protocol, networking, TLS, compression, scheduler, telemetry, benchmark, schema, or migration behavior.
 
 ## Repository evidence
 
-- Read agent/task.md, agent/architecture/current-plan.md, agent/builder/implementation-report.md, docs/README.md, the approved engineering, quality, delivery, operations, workflow, milestone, Definition of Done, contract, architecture, data, and ADR documents, plus the live repository state.
-- Inspected CMakeLists.txt, CMakePresets.json, cmake/bootstrap-vcpkg.sh, vcpkg.json, vcpkg-configuration.json, .clang-format, .clang-tidy, .github/workflows/ci.yml, all support/CLI source and headers, all Catch2 tests, all validation scripts, third_party/NOTICE.md, and relevant documentation changes.
-- include/spoink/support/types.h lines 13-40 defines tag-parameterized identifiers, PeerId at 32 bytes, TransferId at 16 bytes, and a separate RequestId class containing uint64_t.
-- tests/unit/types_test.cpp lines 22-40 directly asserts the approved sizes/value type, rejects a 16-byte PeerId construction, rejects PeerId-to-TransferId conversion, and checks runtime representations.
-- CMakeLists.txt line 55 installs only the spoink runtime target. The clean install contained one file: bin/spoink.
-- .clang-tidy line 13 uses an absolute-path-tolerant include/src header filter. The generated Ninja commands invoke clang-tidy-18 for every project translation unit with the checked-in configuration.
-- .clang-tidy lines 17-32 set ClassCase, EnumConstantCase, and ConstantCase to aNy_CasE. docs/13_engineering/13_01_engineering_standards.md line 38 requires suppression owner, reason, scope, and removal condition and forbids blanket project-code suppressions.
-- tests/unit/raii_test.cpp line 19 and include/spoink/support/result.h lines 23 and 44 contain narrow NOLINT comments with reasons, but no owner or removal condition.
-- scripts/check-toolchain.py lines 7-11 records the expected versions but tests only whether the expected text is a substring of command output.
-- CMakeLists.txt line 1 requires CMake 3.28.3; CMakePresets.json lines 3-7 declares cmakeMinimumRequired 3.28.0.
-- scripts/check-docs.py builds local heading-anchor sets and validates missing files/anchors. Its only artifact-ID check is that each prefix literal appears in docs/README.md; it does not parse ID definitions/references or reject duplicates and dangling IDs.
-- vcpkg.json contains only Catch2 and no project license field. vcpkg-configuration.json, bootstrap-vcpkg.sh, and scripts/check-dependencies.py use baseline 74e6536215718009aae747d86d84b78376bf9e09. third_party/NOTICE.md records vcpkg/MIT and Catch2 3.11.0#0/BSL-1.0.
-- docs/16_operations/16_01_local_development_and_deployment.md line 9 correctly states that M0 pins Catch2 only and that OpenSSL, SQLite, LZ4, and Zstd are future dependencies.
-- The implementation inventory contains only support utilities, a version-only CLI, tests, build/quality files, and documentation. Searches found no later-milestone implementation.
-- Git status shows every M0 build, CI, source, test, script, and dependency file as untracked. git ls-files reports 0 tracked C++ headers/sources while the working tree contains 15.
+- Fetched remote main and confirmed it resolves to 863bebeb8c69ccd08139994f870f0c8e6f2eb493.
+- 863beb is a merge of the least-privilege repair branch. Its tree is identical to final hosted PR head 44e2b14fabfcf577388b38c91b8ef61ef175b6bf, so run 40738534004 tested the reviewed tree.
+- The delta from Review iteration 8 changes only .github/workflows/ci.yml and agent/builder/implementation-report.md. The workflow change removes one line: the workflow-wide pull-requests: write grant. Build files, presets, source, tests, validation scripts, dependency locks, notices, and product documentation did not change.
+- Read agent/task.md, agent/architecture/current-plan.md, the Builder iteration 6 report at the reviewed revision, the previous reviewer report, approved documentation, and the live repository state.
+- Inspected the workflow, CMake/presets, vcpkg/bootstrap, support/CLI source, headers, Catch2 tests, Python validators/tests, notices, and relevant documentation.
+- include/spoink/support/types.h defines Identifier<Tag, ByteCount>, PeerId as Identifier<PeerIdTag, 32>, TransferId as Identifier<TransferIdTag, 16>, and a distinct RequestId class with a uint64_t value.
+- tests/unit/types_test.cpp directly asserts PeerId::kByteCount == 32, TransferId::kByteCount == 16, RequestId.value() has uint64_t type, 16 bytes cannot construct PeerId, and PeerId is not convertible to TransferId.
+- CMakeLists.txt installs only the spoink runtime target. The new isolated install inventory contained only bin/spoink.
+- CMakePresets.json records cmakeMinimumRequired 3.28.3 and separate GCC, Clang, sanitizer, tidy, developer, and release presets.
+- scripts/check-toolchain.py has anchored vendor-specific parsers and compares parsed values with exact expected strings. tests/scripts/test_check_toolchain.py explicitly rejects 3.28.30, 1.11.10, 13.3.00, and 18.1.30.
+- .github/workflows/ci.yml separately installs packages, appends /usr/bin through GITHUB_PATH, and asserts /usr/bin/cmake and /usr/bin/ninja in repository-checks, the three-entry build matrix, clang-tidy, and ASan/UBSan.
+- .github/workflows/ci.yml lines 8-9 contain the complete workflow-level permission map: contents: read. No workflow or job permission grants pull-requests: write.
+- GitHub documents that workflow-level permissions apply to all jobs and that jobs.<job_id>.permissions is the mechanism for minimum per-job access: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idpermissions
+- The dependency-review action's basic configuration requires contents: read. Its documentation says pull-requests: write is additionally needed when PR-comment summaries are enabled; this workflow does not configure comment-summary-in-pr: https://github.com/actions/dependency-review-action/blob/main/docs/examples.md
+- .clang-tidy uses CamelCase/lower_case rules with k prefixes for constants and enum constants; no aNy_CasE setting exists. Its header filter matches absolute include/spoink project-header paths.
+- The three NOLINT sites in result.h and raii_test.cpp include owner, reason, scope, and removal condition. No blanket directory exclusion exists.
+- scripts/check-docs.py parses documented definitions/references, ranges, wildcards, local files, and anchors. tests/scripts/test_check_docs.py covers valid range/wildcard input and duplicate, dangling, malformed, missing-file, and missing-anchor failures.
+- vcpkg.json contains only Catch2 and no license field for Spoink. vcpkg-configuration.json and bootstrap-vcpkg.sh use the same baseline. third_party/NOTICE.md records vcpkg/MIT and Catch2 3.11.0#0/BSL-1.0.
+- docs/16_operations/16_01_local_development_and_deployment.md states that OpenSSL, SQLite, LZ4, and Zstd are future dependencies not acquired or linked by M0.
+- Source inventory and keyword inspection found only support utilities and the version-only CLI; no later-milestone implementation, schema, or persistent/public compatibility surface exists.
 
 ## Independent verification
 
-1. Confirmed Ubuntu 24.04.5 LTS x86-64 under WSL2. Captured CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0, Clang/clang-tidy/clang-format 18.1.3, Python 3.12.3, and Git 2.43.0.
-2. Created an isolated Linux copy excluding .git, .vcpkg, and out. The first bootstrap clone ended with a transient HTTP/2 early-EOF failure. After deleting only the confirmed incomplete 4 KB clone, reran the documented script with Git HTTP/1.1 transport: PASS. It checked out vcpkg baseline 74e6536215... and produced vcpkg tool 2025-10-16-71538f2694db93da4668782d094768ba74c45991.
-3. Ran cmake --preset dev, cmake --build --preset dev, ctest --preset dev, installation to out/install, and the installed spoink version command: PASS. Build completed in 12 steps, 10/10 tests passed, and output was spoink 0.1.0.
-4. Observed vcpkg resolve Catch2 3.11.0 from port tree 5f7385233a249ddbcc48f261b4e4c20f42297360 and report BSL-1.0/MIT licenses: PASS against the checked-in lock/notices.
-5. Ran ci-gcc configure/build/CTest: PASS with GCC 13.3.0; 10/10 tests passed.
-6. Ran ci-clang configure/build/CTest: PASS with Clang 18.1.3; 10/10 tests passed.
-7. Ran the sanitize configure with the requested ASAN_OPTIONS and UBSAN_OPTIONS, then built and ran CTest: PASS; 10/10 tests passed with no sanitizer report.
-8. Ran clang-tidy configure/build: PASS. Inspected ninja -t commands and confirmed clang-tidy-18 is invoked for project/test translation units using the checked-in .clang-tidy file. The header filter matches absolute include/spoink and src/spoink paths.
-9. Ran release configure/build/CTest: PASS; 10/10 tests passed.
-10. Ran python3 scripts/check-toolchain.py on the actual tools: PASS, printing “Validated exact M0 toolchain versions.”
-11. Negative-tested scripts/check-toolchain.py by mocking outputs as CMake 3.28.30, Ninja 1.11.10, GCC 13.3.00, and LLVM tools 18.1.30: FAIL EFFECTIVENESS. The validator exited 0 and still printed “Validated exact M0 toolchain versions.”
-12. Ran python3 scripts/check-dependencies.py: PASS.
-13. Ran python3 scripts/check-docs.py: PASS over 39 Markdown documents.
-14. Negative-tested the documentation validator with temporary fixtures. A missing local anchor correctly returned 1. Duplicate FR-999 entries plus an unbound FR-888 entry returned 0: link/anchor validation is repaired, but ID validation remains ineffective.
-15. Inspected the clean install using find and file: PASS. It contained only bin/spoink, an x86-64 ELF executable; no internal headers or support library were installed.
-16. Ran clang-format-18 --dry-run --Werror over every .h/.cpp under include, src, and tests: FAIL. include/spoink/support/error.h has the wrong standard-include order; clang-format moves cstdint before string.
-17. Ran the workflow's exact git ls-files formatting pipeline against the live checkout: it exited successfully but processed no files. git ls-files '*.cpp' '*.h' returned 0; direct inventory found 15 files.
-18. Ran git diff --check from Ubuntu against the live checkout: PASS with no whitespace errors.
-19. Inspected git status, diff/stat, changed documentation, workflow, dependency lock, tests, public/install interfaces, error paths, and M1+ keyword/inventory scans. No M1+ behavior, schema, migration, runtime dependency, or compatibility surface was added.
-20. Removed the confirmed isolated /var/tmp review copy after testing; 722 MB of generated build/dependency artifacts were deleted. Production files were not modified.
+### Retained Review iteration 7 baseline
 
-Not independently executed: GitHub-hosted gitleaks and dependency-review Actions. No remote CI run representing this implementation exists because the workflow and implementation remain untracked.
+1. Ran git status, git rev-parse HEAD, recent log, commit stats, tree inventory, and diffs. Result: clean initial checkout at 3fda33572521d0419ec4671a0a8daa1a994cb092; b75cc9e contains the substantive M0 implementation.
+2. Created an isolated local Ubuntu clone from the live repository. Result: clean committed checkout at the exact reviewed HEAD; no uncommitted host files entered verification.
+3. Captured the platform and tools: Ubuntu 24.04.5 LTS x86-64; CMake 3.28.3; Ninja 1.11.1; GCC 13.3.0; Clang, clang-tidy, and clang-format 18.1.3.
+4. Ran bash cmake/bootstrap-vcpkg.sh exactly. Result: PASS; checked out vcpkg 74e6536215... and bootstrapped tool version 2025-10-16-71538f2694db93da4668782d094768ba74c45991.
+5. Ran the dev configure/build/CTest/install/version sequence. Result: PASS; 12 build steps, 10/10 tests, only bin/spoink installed, output spoink 0.1.0.
+6. Ran ci-gcc configure/build/CTest. Result: PASS with GCC 13.3.0 and 10/10 tests.
+7. Ran ci-clang configure/build/CTest. Result: PASS with Clang 18.1.3 and 10/10 tests.
+8. Ran sanitize configure with the requested ASAN_OPTIONS and UBSAN_OPTIONS, followed by build and CTest. Result: PASS; 10/10 tests and no sanitizer report.
+9. Ran clang-tidy configure/build. Result: PASS; all 12 build steps completed under clang-tidy 18.
+10. Ran python3 scripts/verify-clang-tidy-header-gate.py. Result: PASS; the controlled project-header naming violation was rejected.
+11. Independently created temporary source/header fixtures in the isolated clone where a normal translation unit included a violating include/spoink header. Result: clang-tidy returned failure with readability-identifier-naming for the header, proving HeaderFilterRegex applies to included project headers. Fixtures were automatically removed.
+12. Ran release configure/build/CTest/install/version. Result: PASS; 10/10 tests, only bin/spoink installed, output spoink 0.1.0.
+13. Ran python3 -m unittest discover --start-directory tests/scripts --pattern test_*.py. Result: PASS; 9/9 tests.
+14. Inspected and exercised the exact-version tests. Result: exact versions accepted; deceptive CMake 3.28.30, Ninja 1.11.10, GCC 13.3.00, and LLVM 18.1.30 values rejected, as was an unrecognized vendor format.
+15. Ran python3 scripts/check-toolchain.py. Result: PASS, “Validated exact M0 toolchain versions.”
+16. Ran python3 scripts/check-dependencies.py. Result: PASS, baseline/Catch2 lock/notices validated.
+17. Ran python3 scripts/check-docs.py. Result: PASS for the committed documentation corpus.
+18. Independently exercised extra temporary documentation fixtures. Result: a range with a missing member produced dangling FR-002; a descending range failed; wildcard definitions failed; malformed double-wildcard syntax failed. Fixtures were automatically removed.
+19. Ran git ls-files for C++ files and the requested clang-format-18 dry run. Result: all 15 tracked .h/.cpp files were enumerated and formatting passed.
+20. Ran git diff --check HEAD^. Result: PASS. Also ran git diff --check 4a4f941..HEAD over the complete substantive M0 range: PASS.
+21. Inspected the vcpkg checkout. Result: baseline is tagged 2025.10.17; Catch2 port tree 5f7385233a249ddbcc48f261b4e4c20f42297360 declares version 3.11.0 and license BSL-1.0 and pins its upstream source with SHA-512.
+22. Observed vcpkg installation output. Result: Catch2 3.11.0 plus the two vcpkg host helpers were restored; declared package licenses were BSL-1.0 and MIT. No future runtime dependency was installed by the manifest.
+23. Scanned implementation/build surfaces for M1+ behavior and inspected public/install interfaces, errors, dependency boundaries, and documentation alignment. Result: no M1+ behavior or schema/migration exists.
+24. Confirmed the isolated clone remained clean apart from ignored generated output, then removed the confirmed 723 MB /var/tmp clone. Production files were not modified.
+25. Queried the GitHub Actions API for reviewed HEAD 3fda33572521d0419ec4671a0a8daa1a994cb092. Result: push run 40679859232 completed with failure. secrets passed; dependency-review was skipped as designed for a push rather than a pull request.
+26. Inspected every failed job and its authenticated log. Result: repository-checks, ci-gcc, ci-clang, release, clang-tidy, and ASan/UBSan all failed at their exact-toolchain validation step with the same messages: cmake expected 3.28.3 but got 3.31.6; ninja expected 1.11.1 but got 1.13.2. No affected job reached bootstrap, configure, build, test, install, clang-tidy, sanitizer, validator-unit-test, documentation, or formatting steps.
+27. Inspected the hosted installation log. Result: apt successfully installed the approved cmake 3.28.3-1build7 and ninja-build 1.11.1-2 packages, proving this is workflow PATH selection rather than unavailable Ubuntu packages. The exact validator behaved correctly by rejecting the selected runner-toolcache versions.
+
+Those results establish the independently verified baseline before the workflow-only repair. The old hosted run was red and dependency-review was then pending; the following checks supersede that hosted status for Review iteration 8.
+
+### Review iteration 8 verification
+
+1. Ran git status, git rev-parse, git log, git fetch origin main, git show, tree comparisons, and targeted diffs. Result: remote main is exact requested revision bf31702; the PR head and merge revision have identical trees; only agent/reviewer/review.md is modified in the live worktree.
+2. Inspected agent/task.md, agent/architecture/current-plan.md, the Builder iteration 5 report at the reviewed revision, the previous reviewer report, the workflow, CMake/presets, support types/tests, validation scripts, dependency manifests, notices, operations documentation, and source inventory.
+3. Queried [GitHub Actions run 40690524048](https://github.com/Remaster-Expert-1829/dift/actions/runs/40690524048) and every job through the GitHub API. Result: pull_request event, completed success; dependency-review, repository-checks, ci-gcc, ci-clang, release, clang-tidy, ASan/UBSan, and secrets all succeeded with no failed steps.
+4. Inspected the authenticated hosted logs. Result: relevant jobs selected /usr/bin/cmake and /usr/bin/ninja and printed "Validated exact M0 toolchain versions."
+5. Inspected compiler/test logs. Result: ci-gcc used GNU 13.3.0 and passed 10/10; ci-clang used Clang 18.1.3 and passed 10/10; release used GNU 13.3.0, passed 10/10, installed successfully, and printed spoink 0.1.0; ASan/UBSan passed 10/10; clang-tidy and the project-header gate steps completed successfully.
+6. Inspected dependency and secret logs. Result: dependency review reported no vulnerable packages at low severity or higher and no denied packages; gitleaks reported no leaks.
+7. Inspected GITHUB_TOKEN permission blocks in dependency-review, repository-checks, secrets, release, clang-tidy, and ASan/UBSan logs. Result: every inspected job received Contents: read and PullRequests: write, confirming the write permission is workflow-wide.
+8. Compared the checked workflow against GitHub's official workflow-permission and dependency-review-action documentation. Result: job-level permissions are available for least privilege; the checked basic dependency-review invocation does not enable the PR-comment feature that documents pull-requests: write as necessary.
+9. Created an isolated checkout at exact bf31702 on Ubuntu 24.04.5 x86-64. Verified existing review tools: CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0, Clang/clang-tidy/clang-format 18.1.3, and pinned vcpkg commit 74e6536215718009aae747d86d84b78376bf9e09.
+10. Ran cmake --preset dev, cmake --build --preset dev, ctest --preset dev, installation, and the installed version smoke. Result: PASS; 12 build steps, 10/10 tests, only bin/spoink installed, output spoink 0.1.0.
+11. Ran python3 -m unittest discover --start-directory tests/scripts --pattern 'test_*.py'. Result: PASS, 9/9.
+12. Ran scripts/check-toolchain.py, scripts/check-dependencies.py, and scripts/check-docs.py. Result: all PASS.
+13. Ran the tracked .h/.cpp clang-format-18 dry run and git diff --check across the reviewed delta. Result: PASS.
+14. Inspected types.h, types_test.cpp, the install rule, all source/test paths, and targeted M1+ keywords. Result: approved ID contracts and executable-only package remain; no M1+ behavior was found.
+15. A redundant fresh vcpkg network clone stalled in git-remote-https at 3.3 MB and was cancelled. Focused compilation used the previously independently verified checkout at the exact locked commit; the current hosted jobs independently bootstrapped that same pin successfully. The verified 54 MB temporary checkout was removed afterward.
+
+### Review iteration 9 verification
+
+1. Ran git status, git rev-parse, git log, git fetch origin main, git show, tree comparisons, and targeted diffs. Result: remote main is exact requested revision 863bebeb8c69ccd08139994f870f0c8e6f2eb493; its tree equals final PR head 44e2b14fabfcf577388b38c91b8ef61ef175b6bf; only agent/reviewer/review.md is modified in the live worktree.
+2. Inspected agent/task.md, agent/architecture/current-plan.md, the Builder iteration 6 report at the reviewed revision, the previous reviewer report, .github/workflows/ci.yml, and the unchanged M0 implementation/dependency/documentation surfaces.
+3. Compared bf31702..863beb. Result: the only substantive change is removal of workflow-level pull-requests: write; the Builder report is the only other changed file. git diff --check passed.
+4. Queried [PR run 40737223533](https://github.com/Remaster-Expert-1829/dift/actions/runs/40737223533) and downloaded every authenticated job log. Result: all eight jobs succeeded; every effective token block contained exactly Contents: read and Metadata: read; no PullRequests scope appeared.
+5. Queried [final PR-head run 40738534004](https://github.com/Remaster-Expert-1829/dift/actions/runs/40738534004) and every job/step. Result: dependency-review, repository-checks, ci-gcc, ci-clang, release, clang-tidy, ASan/UBSan, and secrets all succeeded with no failed steps.
+6. Inspected the final run logs. Result: relevant jobs selected /usr/bin/cmake and /usr/bin/ninja and passed exact tool validation; GCC 13.3.0 and Clang 18.1.3 each passed 10/10 tests; release passed 10/10, installed, and printed spoink 0.1.0; ASan/UBSan passed 10/10; clang-tidy and its header gate completed; validator tests ran 9/9; dependency/docs/format checks passed; dependency-review found no vulnerable or denied packages; gitleaks found no leaks.
+7. Reinspected the approved ID definitions/tests, executable-only install rule, CMake/vcpkg pins, notices, and implementation inventory at 863beb. Result: all earlier M0 contracts remain unchanged and correct.
+8. Searched target implementation surfaces for networking, TLS, persistence, compression, scheduler, telemetry, benchmark, schema, and migration markers. Result: no M1+ implementation was found.
 
 ## Findings
 
-### Finding 1 — Exact toolchain validation is not exact
+### Defects introduced by the current implementation
 
-- Severity: High
-- Exact file, component, or behavior: scripts/check-toolchain.py lines 7-11; CMakePresets.json lines 3-7; CMakeLists.txt line 1; .github/workflows/ci.yml tool installation/validation jobs.
-- Evidence: The script uses “if version not in output”. Mocked wrong superstring versions 3.28.30, 1.11.10, 13.3.00, and 18.1.30 all passed. Preset metadata says 3.28.0 while the project requires 3.28.3. CI installs mutable apt package families; only a separate repository-check job calls the ineffective validator.
-- User or system impact: Tool drift can be reported as an exact match, undermining the reproducible-toolchain acceptance criterion and allowing build jobs to run a different patch level than reviewed.
-- Required correction: Parse each tool's authoritative version token and compare it for equality; align preset metadata to 3.28.3; apply validation to the build/analysis jobs or use a reviewed immutable tool image/snapshot.
-- Required verification after correction: Add automated positive and negative tests for every tool parser, including superstring versions, and rerun the full Ubuntu matrix.
-- Classification: Defect introduced by the current implementation.
+None identified.
 
-### Finding 2 — Formatting gate is vacuous for this submission and the actual sources fail format
+### Repaired earlier findings
 
-- Severity: High
-- Exact file, component, or behavior: .github/workflows/ci.yml formatting step; include/spoink/support/error.h lines 3-4; live Git index.
-- Evidence: All 15 C++ files and the workflow are untracked. The workflow enumerates git ls-files, which returns zero and exits successfully. Direct clang-format 18 verification over the working tree fails because error.h places string before cstdint.
-- User or system impact: The required formatting gate gives a false green result, and no submitted revision or remote CI run contains the reviewed implementation.
-- Required correction: Apply clang-format 18 to the failing header, include the entire M0 implementation/workflow in the submitted Git revision through the normal workflow, and run CI on that revision.
-- Required verification after correction: Confirm git ls-files enumerates all intended source/header files, rerun the exact workflow formatting command, inspect the submitted diff, and review all CI job results.
-- Classification: Current implementation and submission-state defect.
-
-### Finding 3 — Documentation ID validation remains ineffective
-
-- Severity: Medium
-- Exact file, component, or behavior: scripts/check-docs.py lines 15 and 44-46; documentation CI step.
-- Evidence: Missing local files and anchors are now detected, but a fixture with duplicate FR-999 and dangling FR-888 entries returned success because only legend prefix literals are checked.
-- User or system impact: CI can claim link/ID validation while duplicate, malformed, or dangling traceability IDs remain undetected.
-- Required correction: Define and parse meaningful artifact-ID definitions/references, including documented wildcard/range rules, and reject duplicates, malformed IDs, and dangling references.
-- Required verification after correction: Add self-tests covering valid documents plus duplicate ID, dangling ID, malformed ID, missing file, and missing anchor failures.
-- Classification: Incomplete repair of a current quality-script defect.
-
-### Finding 4 — clang-tidy passes by using unjustified broad naming suppressions
-
-- Severity: Medium
-- Exact file, component, or behavior: .clang-tidy lines 17-32; tests/unit/raii_test.cpp line 19; include/spoink/support/result.h lines 23 and 44; engineering suppression policy.
-- Evidence: Header coverage and the preset are repaired, but ClassCase, EnumConstantCase, and ConstantCase are globally set to aNy_CasE. No owner, scope, or removal condition is recorded. Narrow NOLINT comments state a reason and line scope but still omit the policy's owner/removal fields.
-- User or system impact: Naming diagnostics are disabled project-wide, so the static-analysis gate can pass without enforcing the checked-in convention; suppression debt has no accountable lifecycle.
-- Required correction: Configure enforceable naming cases/prefixes for the chosen convention and remove the global aNy_CasE exemptions. For any genuinely necessary NOLINT, record owner, reason, scope, and removal condition in the repository-approved form.
-- Required verification after correction: Rerun the checked-in clang-tidy preset and demonstrate that a temporary violating project-header fixture is rejected while reviewed narrow suppressions pass.
-- Classification: Current static-analysis policy defect.
-
-### Repaired Review iteration 4 findings
-
-- ID representations and direct contract tests: repaired and independently passed.
-- Executable-only installation: repaired and independently passed.
-- Project-license claim: removed; third-party notices remain aligned.
-- Operations wording for future OpenSSL/SQLite/LZ4/Zstd: repaired.
-- clang-tidy execution and project-header filter: repaired; suppression policy remains Finding 4.
-- Documentation local link/anchor detection: repaired; artifact-ID semantics remain Finding 3.
-- Linux verification blocker: removed; all requested build/test presets now have independent Ubuntu evidence.
+- Exact toolchain enforcement: repaired and independently positive/negative tested.
+- Formatting and committed source inventory: repaired; all 15 tracked files pass clang-format 18.
+- Documentation artifact-ID validation: repaired and independently adversarially tested.
+- clang-tidy naming policy/suppression records: repaired; full tidy build and header-negative probes pass.
+- Git submission state: repaired; remote main is reviewed merge revision 863beb and matches final hosted PR head 44e2b14.
+- Hosted tool selection: repaired; all relevant jobs selected and validated /usr/bin/cmake and /usr/bin/ninja before substantive work.
+- GitHub token authorization: repaired; no job receives pull-request write access, and basic dependency-review passes with read-only permissions.
 
 ### Relevant pre-existing defects
 
-None identified that block this iteration beyond repository state already reported in Finding 2.
+None identified.
 
-### Optional improvements that do not block approval
+### Optional improvements that do not independently block approval
 
-- Pin third-party GitHub Actions to reviewed commit SHAs rather than mutable major-version tags.
-- Make check-dependencies.py verify that the bootstrap commit, registry baseline, manifest override, port tree, and notices all agree rather than checking only selected literals.
-- Constrain ScopedCleanup to nothrow-invocable cleanup/move semantics and document Result.error() preconditions.
+- Pin third-party GitHub Actions to reviewed commit SHAs instead of mutable major-version tags.
+- Upgrade actions/checkout from v4 to a reviewed Node.js 24-capable release; the hosted run warns that checkout v4 targets deprecated Node.js 20 and is currently being forced onto Node.js 24.
+- Remove CMAKE_C_COMPILER from CXX-only presets or enable C explicitly to avoid the harmless “manually-specified variable was not used” configure warning.
+- The committed header-gate script invokes a header as the primary clang-tidy input. The independent include-based probe passed, so coverage is established; extending the script to use that stronger include-based shape would preserve the proof in CI.
 
 ## Builder repair instructions
 
-1. Replace substring tool-version checks with exact parsers/comparisons; align CMakePresets.json to CMake 3.28.3; add negative parser tests and enforce the check in each relevant CI environment.
-2. Run clang-format 18 on all M0 C++ files and fix error.h include order.
-3. Replace global aNy_CasE clang-tidy settings with enforceable naming configuration; bring every NOLINT/suppression record into compliance with owner, reason, scope, and removal-condition policy.
-4. Implement actual documentation artifact-ID validation and validator self-tests while retaining the repaired local link/anchor checks.
-5. Include every M0 build, CI, source, test, script, dependency, notice, and relevant documentation file in the submitted Git revision through the normal workflow.
-6. Run the documented Ubuntu 24.04 sequence and every preset/check again, then run and review the complete GitHub CI workflow including formatting, gitleaks, and dependency review where applicable.
-7. Submit Builder iteration 3 with exact command outputs and identify the reviewed revision.
+Not required.
 
 ## Human decision required
 
@@ -139,14 +143,13 @@ Not required.
 
 ## Remaining risks
 
-- The actual Ubuntu build, compiler matrix, tests, sanitizers, release build, tidy execution, install smoke, dependency lock, and runtime scope all have independent passing evidence.
-- Current positive validator outputs overstate enforcement: toolchain “exact” validation and artifact-ID validation both pass cases they should reject.
-- Remote secret/dependency scanning and GitHub runner behavior remain unobserved.
-- The implementation has no wire/storage compatibility risk yet because those surfaces are correctly deferred.
-- vcpkg internally downloaded CMake 3.30.1 to build its port even though the project itself ran under CMake 3.28.3. This is dependency-manager tooling, not evidence that the project minimum failed, but it should be understood when claiming a completely closed tool set.
+- Review iteration 9 did not repeat the entire local fresh-checkout matrix because build, dependency, source, test, and documentation inputs did not change. Earlier independent Linux verification and the complete final hosted run cover those unchanged surfaces.
+- GitHub Actions use mutable major-version tags, creating a non-blocking supply-chain reproducibility risk.
+- vcpkg fetched registry metadata and an internal CMake 3.30.1 tool while resolving the pinned port. The project itself configured with the reviewed CMake 3.28.3, and the resolved Catch2 port tree was pinned and verified; this is dependency-manager tooling rather than project toolchain drift.
+- M1+ persistence, protocol, authorization, transfer, security, recovery, and compatibility behavior is intentionally absent and therefore outside this M0 validation.
 
 ## Final assessment
 
-Builder iteration 2 substantially repairs the prior implementation and independently builds cleanly on Ubuntu 24.04 with GCC, Clang, ASan/UBSan, release, and clang-tidy configurations. Its type contracts, package contents, vcpkg/Catch2 lock, notices, operations wording, and M0-only scope are correct.
+APPROVED. Remote main 863bebeb8c69ccd08139994f870f0c8e6f2eb493 satisfies agent/task.md for M0-001. The iteration-8 authorization defect is repaired: the workflow declares only contents: read, no job grants pull-requests: write, every effective token block is read-only, and dependency-review remains functional.
 
-The repository still does not satisfy agent/task.md. Exact tool versions are not actually enforced, documentation IDs are not validated, clang-tidy relies on policy-noncompliant global naming suppressions, the true C++ inventory fails clang-format 18, and the complete implementation remains outside Git and therefore outside observed CI. The required result for Builder iteration 2 is FAIL.
+The final tree preserves the approved strong ID contracts, executable-only installation, exact tool/dependency locks, tests, analysis gates, documentation validation, and accurate license notices. The final PR-head run completes the full required CI matrix, and no M1+ behavior was introduced.

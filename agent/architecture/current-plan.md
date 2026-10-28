@@ -90,3 +90,11 @@ Dependencies are acquired at build time only; runtime must not download code. Ve
 ## Builder instructions and boundaries
 
 Build M0 autonomously within this plan and the approved corpus. Choose exact tool and library versions, test framework, scanner, private file layout, and naming details from working evidence; record them. Preserve the dirty worktree. Return to the Architect only if concrete evidence requires changing an accepted ADR, supported platform, trust model, public contract, or material dependency/license boundary. Do not implement M1-M5 behavior to populate skeletons or CI jobs.
+
+## Architect closure — M0-001
+
+- Reviewed revision: remote main `863bebeb8c69ccd08139994f870f0c8e6f2eb493`; local `HEAD` and cached `origin/main` match. Its tree matches hosted PR head `44e2b14fabfcf577388b38c91b8ef61ef175b6bf`.
+- Verdict: ACCEPTED for architectural scope following independent Review iteration 9 `APPROVED` of Builder iteration 6. The reviewed implementation remains the M0 C++17 build, quality, and support foundation; no M1+ runtime behavior, wire or storage format, or trust-policy change was introduced.
+- Documentation status: M0 dependency/toolchain and license records, CI gates, and `TBD-ENG-DEP-001` resolution align with the approved M0 plan. No ADR or product decision is needed to close M0-001. The Owner updates task state and preserves the Reviewer report.
+- Open non-blocking risks: GitHub Actions still use mutable major-version tags; checkout v4 has a Node.js 20 deprecation warning; the CXX-only preset has a harmless unused C compiler variable warning; the committed tidy header gate could use the independently passing include-based probe. These are follow-up quality improvements, not M0 blockers.
+- M1 handoff gate: M1 may begin after Owner closure under `docs/19_planning/19_01_milestones.md`. Keep CDC parameterized until `EXP-CDC-001` establishes and records the `rabin-v1` profile and golden vectors. M1 must independently review path safety, SQLite schema/migrations, content-store durability and recovery, leases, reconstruction, and safe GC against its acceptance tests. Do not treat M0 approval as evidence for M1 behavior.
