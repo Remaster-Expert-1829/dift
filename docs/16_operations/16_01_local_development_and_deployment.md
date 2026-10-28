@@ -6,7 +6,7 @@
 
 - Linux x86-64 is the initial CI and benchmark baseline. Other Linux architectures may work but are unsupported until added to CI.
 - GCC and Clang builds are required.
-- CMake, Ninja, Git, vcpkg, OpenSSL, SQLite, LZ4, Zstd, and test/analysis tools are provided through the pinned developer setup.
+- M0 pins CMake, Ninja, Git, vcpkg, Catch2, and test/analysis tools. OpenSSL, SQLite, LZ4, and Zstd are future milestone dependencies and are not acquired or linked by M0.
 - `tc netem`, namespaces, packet capture, and performance tools are optional benchmark dependencies and may require privileges.
 
 ## Repository bootstrap target
@@ -21,6 +21,23 @@ ctest --preset dev
 
 A documented wrapper MAY offer one-command bootstrap, but it must show what it installs/runs and must not require root for ordinary build/tests. Privileged benchmark setup is separate and explicit.
 
+### M0 fresh-checkout build and install
+
+On the supported Linux x86-64 baseline (Ubuntu 24.04), install Git, Python 3, CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0, Clang/clang-tidy/clang-format 18.1.3, and the usual C++ build tools through the distribution's verified package repository. A newer tool may build locally, but `scripts/check-toolchain.py` and CI deliberately reject it until the reviewed lock is updated. Then, from a clean checkout, run:
+
+```bash
+bash cmake/bootstrap-vcpkg.sh
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+cmake --install out/build/dev --prefix "$PWD/out/install"
+./out/install/bin/spoink version
+```
+
+The bootstrap script clones vcpkg at the repository-controlled commit `74e6536215718009aae747d86d84b78376bf9e09`, builds its local executable with metrics disabled, and leaves it under ignored `.vcpkg/`. It requires network access only to acquire build dependencies; the installed `spoink` executable performs no runtime download. Use `ci-gcc`, `ci-clang`, `sanitize`, `clang-tidy`, and `release` presets for the corresponding checks. The sanitizer preset enables AddressSanitizer and UndefinedBehaviorSanitizer. ThreadSanitizer is intentionally not configured in M0 because there are no concurrency-focused tests; it becomes required when such tests are introduced.
+
+To update the toolchain or dependency baseline, first verify availability, license, and build/test results; then update `vcpkg-configuration.json`, `vcpkg.json`, `third_party/NOTICE.md`, this section, the engineering standards, CI, and the M0 dependency checker in one reviewed change. Do not substitute an unpinned `FetchContent` dependency.
+
 ## Planned repository layout
 
 ```text
@@ -31,7 +48,7 @@ A documented wrapper MAY offer one-command bootstrap, but it must show what it i
 ├── cmake/
 ├── config/                 example non-secret configuration
 ├── docs/
-├── include/deltasync/      public/project cross-module headers
+├── include/spoink/         public/project cross-module headers
 ├── src/                    modules from architecture document
 ├── tests/
 │   ├── unit/
@@ -63,10 +80,10 @@ The default state/config locations follow the Linux XDG Base Directory conventio
 ## First-run procedure
 
 1. Install verified release package or build from the pinned source/dependencies.
-2. Run `deltasync init --name <name>` on both devices.
+2. Run `spoink init --name <name>` on both devices.
 3. Review printed peer IDs and protect state directories.
-4. On the receiving device, run `deltasync pair --listen <lan-address:port>`.
-5. On the other, run `deltasync pair <lan-address:port>`.
+4. On the receiving device, run `spoink pair --listen <lan-address:port>`.
+5. On the other, run `spoink pair <lan-address:port>`.
 6. Compare SAS on both screens and confirm only if identical and the peer names/IDs are expected.
 7. Receiver runs `receive`; sender runs `send`.
 
@@ -82,7 +99,7 @@ V1 does not choose a magic default port in architecture. `TBD-LIMITS-001` select
 
 ## Configuration and environment
 
-Use TOML plus non-secret `DELTASYNC_*` overrides. Example configuration contains no real keys/certificates. Key/certificate values are file paths. `doctor` reports configuration precedence, permissions, dependency versions, filesystem capabilities, database schema, and reachability hints without mutating state.
+Use TOML plus non-secret `SPOINK_*` overrides. Example configuration contains no real keys/certificates. Key/certificate values are file paths. `doctor` reports configuration precedence, permissions, dependency versions, filesystem capabilities, database schema, and reachability hints without mutating state.
 
 ## Capacity planning
 
@@ -97,14 +114,14 @@ Deduplication may reduce actual usage but is not relied upon when reserving. Con
 
 ## Backups
 
-- Use SQLite online backup or stop DeltaSync cleanly before copying metadata.
+- Use SQLite online backup or stop Spoink cleanly before copying metadata.
 - Back up metadata, chunk store, identity, and any desired final files as distinct assets.
 - Protect identity backup like a credential. Without it, restore uses a new peer ID and requires re-pairing.
 - Restored stores run `doctor` and startup reconciliation before receiving or GC.
 
 ## Recovery runbook
 
-1. Stop other DeltaSync processes using the state root.
+1. Stop other Spoink processes using the state root.
 2. Copy state/store for forensic backup if corruption is suspected.
 3. Run `doctor` and read the recovery mode/result.
 4. Do not delete SQLite/WAL/temp/quarantine files manually while diagnosing.

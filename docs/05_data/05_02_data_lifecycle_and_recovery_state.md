@@ -8,7 +8,7 @@
 |---|---|---|
 | Device private key | Local identity subsystem | Until explicit identity reset; backed up only by operator policy. |
 | Trusted-peer pin | Local operator/trust store | Until revocation/removal. |
-| Source files | Sender filesystem/user | Never modified by DeltaSync. |
+| Source files | Sender filesystem/user | Never modified by Spoink. |
 | Accepted manifest | Receiver session store | Immutable through session retention. |
 | Session capability | Receiver session controller | Memory-only; connection/session epoch. |
 | Chunk blob | Receiver content store | While referenced/leased or retained by policy. |
@@ -81,7 +81,7 @@ A concurrent new manifest reference either wins before claim or observes the cla
 - Revoking/removing a peer does not delete files, manifests, or chunks automatically.
 - Cancelling a session stops transfer and follows retention policy; completed files stay.
 - Deleting a session record first removes its file references transactionally, then makes unreferenced chunks eligible after grace.
-- DeltaSync does not provide deletion synchronization in v1.
+- Spoink does not provide deletion synchronization in v1.
 - Identity reset requires explicit confirmation and does not silently erase received files; it invalidates pairings.
 
 ## Backup and restore

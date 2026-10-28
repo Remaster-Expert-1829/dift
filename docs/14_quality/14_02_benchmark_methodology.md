@@ -6,22 +6,22 @@
 
 | ID | Question |
 |---|---|
-| BM-Q1 | How many payload and observed network bytes does DeltaSync transfer for unchanged and modified content? |
+| BM-Q1 | How many payload and observed network bytes does Spoink transfer for unchanged and modified content? |
 | BM-Q2 | What throughput/CPU/memory cost does first transfer impose by workload? |
 | BM-Q3 | When does compression reduce total transfer time/bytes, and what does auto routing cost? |
-| BM-Q4 | Does adaptive scheduling improve useful throughput or recovery time over DeltaSync static mode under controlled link changes? |
+| BM-Q4 | Does adaptive scheduling improve useful throughput or recovery time over Spoink static mode under controlled link changes? |
 | BM-Q5 | How much work is avoided during resume after interruption? |
-| BM-Q6 | How does DeltaSync compare with relevant baselines under equivalent scope/configuration? |
+| BM-Q6 | How does Spoink compare with relevant baselines under equivalent scope/configuration? |
 
 ## Baselines
 
-- **DeltaSync static:** same build, TLS, chunking, and compression; fixed one or fixed configured data-connection setting. This isolates scheduler effects.
-- **DeltaSync no-delta/no-compression modes:** isolates feature costs where implemented as benchmark controls.
+- **Spoink static:** same build, TLS, chunking, and compression; fixed one or fixed configured data-connection setting. This isolates scheduler effects.
+- **Spoink no-delta/no-compression modes:** isolates feature costs where implemented as benchmark controls.
 - **SCP/SFTP:** full encrypted transfer baseline; exact implementation/options/version recorded. It is not a delta-sync baseline.
 - **rsync over SSH:** delta-transfer baseline with exact options/version. Claims that rsync cannot tolerate insertions are forbidden; measurement determines comparative behavior.
 - Other tools may be added only with documented equivalent semantics and configuration.
 
-Do not compare a loopback DeltaSync run to a physical-network competitor run, warm cache to cold cache, or encrypted to unencrypted transfer without prominently labeling the mismatch.
+Do not compare a loopback Spoink run to a physical-network competitor run, warm cache to cold cache, or encrypted to unencrypted transfer without prominently labeling the mismatch.
 
 ## Environments
 
@@ -29,7 +29,7 @@ Do not compare a loopback DeltaSync run to a physical-network competitor run, wa
 2. **Reproducible network namespace:** Linux namespaces/veth with recorded `tc netem` and rate controls; useful for CI and fault sweeps.
 3. **Two-device LAN:** documented hardware/link for user-facing results.
 
-Record OS/kernel, CPU, RAM, storage/filesystem, NIC/link, power mode, compiler/build flags, dependency/tool versions, MTU, TLS, DeltaSync profiles, and topology.
+Record OS/kernel, CPU, RAM, storage/filesystem, NIC/link, power mode, compiler/build flags, dependency/tool versions, MTU, TLS, Spoink profiles, and topology.
 
 ## Workload corpus
 
@@ -94,7 +94,7 @@ For non-normal/skewed results, bootstrap confidence intervals and report median 
 “Bandwidth saved” is:
 
 ```text
-1 - (DeltaSync observed application payload bytes / declared full-file logical bytes)
+1 - (Spoink observed application payload bytes / declared full-file logical bytes)
 ```
 
 It is labeled application-payload savings unless measured wire bytes are used. Manifest/TLS/TCP overhead is never silently counted as zero.

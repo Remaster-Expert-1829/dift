@@ -20,7 +20,7 @@ erDiagram
 
 | Term | Definition |
 |---|---|
-| Device | One DeltaSync installation with a persistent local identity and store. |
+| Device | One Spoink installation with a persistent local identity and store. |
 | Peer | Another device as seen by the local device. |
 | Paired peer | A peer whose public-key identity was confirmed through the pairing ceremony and pinned locally. |
 | Peer ID | SHA-256 fingerprint of the canonical DER SubjectPublicKeyInfo for a device identity key. It is represented as lowercase hexadecimal at contract boundaries. |
@@ -45,7 +45,7 @@ erDiagram
 | SAS | Short authentication string displayed on both devices during first pairing. Users confirm that the strings match. |
 | Logical bytes | Sum of original file sizes accepted for a session. |
 | Useful bytes | Plaintext bytes of chunks the receiver did not already possess and successfully accepted. |
-| Wire bytes | Bytes attributable to DeltaSync frames and payload, with transport/TLS overhead included only when the measurement method can observe it. |
+| Wire bytes | Bytes attributable to Spoink frames and payload, with transport/TLS overhead included only when the measurement method can observe it. |
 | Reused bytes | Logical chunk bytes satisfied from the receiver's verified local store. |
 
 ## Invariants

@@ -5,7 +5,7 @@
 
 ## Context
 
-DeltaSync needs negotiation, durable progress, parallel chunk delivery, and adaptive concurrency. Sharing one byte stream for large payloads and control messages creates head-of-line and framing pressure. Opening an unbounded connection per chunk is unsafe and difficult to recover.
+Spoink needs negotiation, durable progress, parallel chunk delivery, and adaptive concurrency. Sharing one byte stream for large payloads and control messages creates head-of-line and framing pressure. Opening an unbounded connection per chunk is unsafe and difficult to recover.
 
 ## Decision
 

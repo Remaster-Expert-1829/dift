@@ -1,0 +1,18 @@
+{
+  "name": "spoink",
+  "version-semver": "0.1.0",
+  "description": "Spoink direct paired-peer file transfer",
+  "dependencies": [
+    {
+      "name": "catch2",
+      "default-features": true
+    }
+  ],
+  "overrides": [
+    {
+      "name": "catch2",
+      "version-semver": "3.11.0",
+      "port-version": 0
+    }
+  ]
+}

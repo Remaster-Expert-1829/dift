@@ -1,6 +1,6 @@
-# DeltaSync Documentation
+# Spoink Documentation
 
-DeltaSync is a direct, local-network file-transfer system for sending multiple files between paired devices. It uses content-defined chunking to avoid retransmitting data already held by the receiver, secure transport, crash-safe resume, bounded parallelism, optional compression, and measurable telemetry.
+Spoink is a direct, local-network file-transfer system for sending multiple files between paired devices. It uses content-defined chunking to avoid retransmitting data already held by the receiver, secure transport, crash-safe resume, bounded parallelism, optional compression, and measurable telemetry.
 
 This corpus is the source of truth for implementation after approval. Code may refine implementation details but may not silently alter requirements, accepted architectural decisions, external contracts, data invariants, or failure semantics.
 
@@ -68,6 +68,8 @@ The words **MUST**, **MUST NOT**, **SHOULD**, and **MAY** are normative when cap
 | `RISK` | Risk-register entry |
 | `CFG` | Operator configuration |
 | `EXP` | Experimentally selected parameter or policy |
+
+Artifact-ID definitions appear in a Markdown heading, an explicit list item, or the first cell of a table row. References must resolve to exactly one such definition. A numbered range such as `FR-004–007` expands inclusively and every member must be defined. A wildcard such as `TEST-UNIT-CDC-*` names a planned family: it is syntax-checked but may have no members until its owning milestone defines them. Wildcards are references only and must never define an artifact.
 
 ## Classification of decisions
 

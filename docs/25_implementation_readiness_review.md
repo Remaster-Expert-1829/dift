@@ -23,13 +23,12 @@ An independent developer or coding agent can begin M0 and the parameterized/offl
 
 No unresolved product-owner decision currently blocks M0/M1. The following engineering decisions/experiments must be completed at their gates:
 
-1. `TBD-ENG-DEP-001` — actual pinned compiler/CMake/vcpkg/dependency versions and licenses.
-2. `EXP-CDC-001` — exact `rabin-v1` polynomial/window/min/target/max parameters and golden vectors.
-3. `TBD-SEC-KEY-001` — permitted device key algorithm/strength for the selected OpenSSL/toolchain.
-4. `TBD-LIMITS-001` — parser, manifest, path, connection, in-flight, timeout, and handshake ceilings/defaults.
-5. `EXP-COMP-001` — initial auto-compression profile.
-6. `EXP-SCHED-001–006` — adaptive policy defaults.
-7. `TBD-OPS-RETENTION` — completed/paused/failed session, unreferenced chunk, log, and quarantine retention defaults.
+1. `EXP-CDC-001` — exact `rabin-v1` polynomial/window/min/target/max parameters and golden vectors.
+2. `TBD-SEC-KEY-001` — permitted device key algorithm/strength for the selected OpenSSL/toolchain.
+3. `TBD-LIMITS-001` — parser, manifest, path, connection, in-flight, timeout, and handshake ceilings/defaults.
+4. `EXP-COMP-001` — initial auto-compression profile.
+5. `EXP-SCHED-001–006` — adaptive policy defaults.
+6. `TBD-OPS-RETENTION` — completed/paused/failed session, unreferenced chunk, log, and quarantine retention defaults.
 
 Each has a documented owner, evidence, and milestone. Values must be committed to configuration/golden fixtures and reflected here when resolved.
 
@@ -45,7 +44,7 @@ Highest current risks are pairing correctness (`RISK-002`), filesystem/database 
 
 ## Implementation blockers
 
-- **M0:** None.
+- **M0:** None. `TBD-ENG-DEP-001` is resolved by the repository-controlled vcpkg baseline `74e6536215718009aae747d86d84b78376bf9e09`, Catch2 `3.11.0#0`, toolchain records, notices, bootstrap, and CI in the M0 build foundation.
 - **M1 core:** None; CDC must be parameterized. `rabin-v1` cannot be declared frozen until EXP-CDC-001.
 - **M2 secure protocol freeze:** blocked until `TBD-SEC-KEY-001` and required parts of `TBD-LIMITS-001` are resolved.
 - **M4 default adaptive/auto behavior:** blocked until the related experiments complete; static/raw modes can be implemented earlier.

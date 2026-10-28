@@ -5,12 +5,12 @@
 
 ## Project
 
-**Name:** DeltaSync  
+**Name:** Spoink
 **Classification:** Tier 3 complex systems project, deliberately scoped as a solo production-oriented prototype.
 
 ## Problem
 
-Conventional direct file transfer resends complete files, cannot reliably resume after process or network interruption, and often applies fixed compression and concurrency policies without considering content or observed link behavior. DeltaSync should transfer batches of files directly between paired devices while reusing data already present on the receiver and preserving correctness under interruption.
+Conventional direct file transfer resends complete files, cannot reliably resume after process or network interruption, and often applies fixed compression and concurrency policies without considering content or observed link behavior. Spoink should transfer batches of files directly between paired devices while reusing data already present on the receiver and preserving correctness under interruption.
 
 ## Target users
 

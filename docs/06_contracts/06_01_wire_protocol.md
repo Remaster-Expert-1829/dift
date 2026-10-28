@@ -8,8 +8,8 @@
 
 | ALPN | Purpose |
 |---|---|
-| `deltasync-pair/1` | Explicit first-time pairing only. No session or chunk messages allowed. |
-| `deltasync/1` | Normal paired-peer control or data connection. |
+| `spoink-pair/1` | Explicit first-time pairing only. No session or chunk messages allowed. |
+| `spoink/1` | Normal paired-peer control or data connection. |
 
 Both peers present device certificates. In normal mode, TLS verification requires a pinned non-revoked public-key identity. In pairing mode, provisional self-signed identities are admitted only to the restricted pairing state machine and become trusted only after SAS confirmation.
 
@@ -19,7 +19,7 @@ Every post-handshake application message begins with exactly 32 bytes:
 
 | Offset | Size | Field | Meaning |
 |---:|---:|---|---|
-| 0 | 4 | `magic` | ASCII `DSYN` (`44 53 59 4e`). |
+| 0 | 4 | `magic` | ASCII `SPNK` (`53 50 4e 4b`). |
 | 4 | 1 | `major` | Protocol major, `1`. |
 | 5 | 1 | `minor` | Negotiated protocol minor, initially `0`. |
 | 6 | 1 | `channel` | `0=PAIRING`, `1=CONTROL`, `2=DATA`. |
@@ -85,7 +85,7 @@ Unknown fields are rejected in minor 0 unless their key begins `x-` and the cont
 ## API-001 — Pairing
 
 1. Both peers exchange `PAIR_HELLO` with `peer_id`, bounded `display_name`, and 32-byte random `attempt_nonce`. Values must match the presented certificate and local attempt.
-2. Both derive 32 bytes using the TLS exporter label `EXPORTER-DeltaSync-Pairing-v1` and context `min(peer_id)||max(peer_id)||min(nonce)||max(nonce)` in bytewise order.
+2. Both derive 32 bytes using the TLS exporter label `EXPORTER-Spoink-Pairing-v1` and context `min(peer_id)||max(peer_id)||min(nonce)||max(nonce)` in bytewise order.
 3. The SAS is the first 20 exporter bits displayed as exactly five uppercase hexadecimal characters, grouped `AA-BBB`. Both screens must match.
 4. After local user input, each sends `PAIR_CONFIRM {accepted: bool}`.
 5. If both accepted, each persists the pin and sends `PAIR_RESULT {status: "PAIRED"}`. Otherwise both return `REJECTED` and persist nothing.

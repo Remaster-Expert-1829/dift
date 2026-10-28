@@ -7,6 +7,7 @@
 
 | Topic | Potential conflict from source/planning | Resolution across corpus | Status |
 |---|---|---|---|
+| Project rename | Earlier corpus and protocol identifiers used the former project name. | Product name is `Spoink`; executable is `spoink`; environment prefix is `SPOINK_*`; ALPN labels are `spoink/1` and `spoink-pair/1`; wire magic is `SPNK`; staging/include paths use `spoink`. | Resolved |
 | Permanent server vs ShareIt-style transfer | Original roadmap used client/server/global server store. | ADR-001: no permanent server; one peer temporarily receives; local store per receiving device. All requirements/architecture/operations use sender/receiver roles. | Resolved |
 | Upload vs download | Earlier question assumed a server. | Either peer may send in a later session. V1 has explicit send/receive, not automatic sync or pull from an always-on server. | Resolved |
 | File scope | “Multiple files” was approved; original examples focused on one file. | FR-005 and PR-02 define multiple regular files/directories as selection, excluding special metadata/types. | Resolved |
@@ -35,11 +36,12 @@
 - Verification families map to traceability and milestone exits.
 - Risks cover the material design/security/measurement concerns without generic filler.
 
+| M0 dependency mechanism | Engineering standards preferred vcpkg but did not select a concrete baseline. | M0 locks vcpkg `2025.10.17` / `74e6536215718009aae747d86d84b78376bf9e09` and Catch2 `3.11.0#0`; lock, notices, bootstrap, presets, and operations instructions agree. | Resolved in M0 |
+
 ## Open conditions, not contradictions
 
 | ID | Condition | Owner / resolution |
 |---|---|---|
-| TBD-ENG-DEP-001 | Confirm pinned vcpkg/toolchain/dependency set. | Builder/Architect in M0; build/license evidence. |
 | EXP-CDC-001 | Select and freeze `rabin-v1` parameters/golden vectors. | Builder/Reviewer in M1 via CDC experiment. |
 | TBD-SEC-KEY-001 | Select permitted device key algorithm/strength supported by target TLS stack. | Architect/security review before M2. |
 | TBD-LIMITS-001 | Select default and absolute parser/resource/timeout ceilings. | Architect/Builder before M2 protocol freeze, using safety analysis/tests. |

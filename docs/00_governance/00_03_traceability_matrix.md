@@ -16,6 +16,8 @@
 | Telemetry and reports | FR-022–024; NFR-013, NFR-014 | ARCH-10 | CLI-005; telemetry schema | `src/telemetry`, `src/cli` | TEST-OBS-001–003, TEST-PERF-* |
 | Maintenance and deletion | FR-025–027; NFR-011 | ADR-003, ADR-004; ARCH-09 | DB-001–006; CLI-006 | `src/identity`, `src/gc`, `src/cli` | TEST-SEC-004, TEST-INT-008–009 |
 
+| M0 support and build foundation | M0-001; IC common conventions | ARCH support boundary; `TBD-ENG-DEP-001` | IC checked Result/Error, size, time, ownership conventions | `CMakeLists.txt`, `CMakePresets.json`, `include/spoink/support`, `src/support`, `src/cli/main.cpp` | `tests/unit/*`, format, clang-tidy, GCC/Clang, ASan/UBSan, dependency/secret/docs CI checks |
+
 ## Maintenance rule
 
 A feature is not implementation-complete if it has no requirement, ownership boundary, relevant contract/data reference, and verification evidence. A row MAY point to “not applicable,” but that conclusion must be explicit.

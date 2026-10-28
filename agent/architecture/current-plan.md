@@ -1,173 +1,92 @@
 # Architecture Plan
 
-- **Task ID:** `UNSPECIFIED` (`agent/task.md` is missing)
-- **Status:** `HUMAN_DECISION_REQUIRED`
+- Task ID: M0-001
+- Status: READY_FOR_BUILD
 
-## Task interpretation
+## Task interpretation and architectural assessment
 
-No implementable task can be interpreted from the repository because the required task contract, `agent/task.md`, does not exist. The only project document is an unapproved proposal for a system named DeltaSync. It explicitly says that its source roadmap is evidence rather than an approved set of requirements or architectural decisions.
-
-If the intended task is to implement any material part of the proposed DeltaSync system, architectural work is required. The proposal involves public wire and CLI contracts, persistent manifests and recovery state, concurrency, cryptographic and trust boundaries, deduplication, and crash recovery. Which of those concerns belongs to the current task cannot be determined without a Task ID, scope, and acceptance criteria.
+M0-001 establishes Spoink's C++17 Linux build, dependency, quality, and support-code foundation. It implements no file-transfer behavior. Architectural planning is warranted because the first target dependencies, cross-module support contracts, and pinned dependency mechanism will constrain later milestones. Approved documents already settle the relevant boundaries; M0 needs no new ADR or product-owner decision.
 
 ## Verified current-state findings
 
-### Repository facts
+- agent/task.md defines M0-001, its scope, non-goals, acceptance criteria, and Architect/Builder/Reviewer handoff.
+- docs/README.md names the approved corpus as the implementation source of truth. docs/25_implementation_readiness_review.md explicitly lists no M0 blocker and assigns TBD-ENG-DEP-001 to M0.
+- docs/19_planning/19_01_milestones.md requires CMake targets/presets, pinned dependencies, support utilities, quality CI, documentation checks, and a fresh-checkout Linux configure/build/test/install.
+- docs/13_engineering/13_01_engineering_standards.md requires C++17, Linux GCC/Clang, warnings-as-errors for project code, inward module dependencies, Result/Error, checked lengths, strong types, RAII, and fake time. It prefers pinned vcpkg manifest mode with find_package consumers.
+- docs/04_architecture/04_01_system_overview.md and 04_02_components_and_runtime_flows.md assign bounded buffers, errors, configuration, and utilities to support. Their physical module layout is guidance; ownership and dependency direction are normative. docs/06_contracts/06_03_internal_component_contracts.md defines the shared result/error, byte-view, size, clock, and ownership conventions; suggested C++ names are not a required ABI.
+- Accepted ADR-001 through ADR-007 already choose direct paired peers, stable logical chunks, TLS identity, hybrid SQLite/filesystem storage, bounded control/data connections, configurable compression, and versioned CBOR framing. None is implemented in M0.
+- docs/14_quality/14_01_test_strategy.md, docs/15_delivery/15_01_ci_release_and_rollback.md, docs/16_operations/16_01_local_development_and_deployment.md, and docs/21_definition_of_done.md define the relevant test, CI, installation, and documentation gates. docs/06_contracts/06_02_cli_and_configuration.md reserves the spoink version command.
+- Repository inspection found documentation, an untracked .gitignore, and tracked agent handoffs, but no CMake configuration, dependency manifest, CI workflow, source, public headers, or tests. Documentation has existing uncommitted edits. The .gitignore pattern names agent, but already tracked handoff files remain tracked. The older Builder and Reviewer reports describe the previous missing-task checkout and are not M0 evidence.
 
-- `agent/task.md` is absent, so there is no Task ID, requested change, or acceptance contract.
-- No prior `agent/architecture/current-plan.md` existed when this assessment began.
-- The repository has no tracked commits or tracked files. Its only pre-existing file is the untracked `docs/00_documentation_plan.md`.
-- There are no production source files, tests, migrations, build files, runtime configuration files, project handbook, or accepted architecture documents to inspect.
-- `docs/00_documentation_plan.md:3` marks itself **PROPOSAL — NOT YET APPROVED**.
-- `docs/00_documentation_plan.md:6` says the roadmap's schedules, designs, benchmarks, and implementation notes are not automatically approved requirements or decisions.
-- `docs/00_documentation_plan.md:180` also records that there is no implementation and all proposed module paths are provisional.
-- `docs/00_documentation_plan.md:215` identifies seven unresolved decisions as blockers to an implementation-ready architecture.
-- `docs/00_documentation_plan.md:264-274` concludes that documentation is not ready and that scope, state, wire protocol, recovery, and security boundaries remain unresolved.
-- The roadmap referenced by the proposal exists at `E:\programs\c++\dift roadmap\dift-final-roadmap vibecode.html`, but it is project-description evidence, not repository policy or an accepted contract.
+## Proposed architecture and resolved engineering choices
 
-### Proposed ideas that are not verified requirements
-
-The available documents discuss a C++ client/server file-transfer prototype with content-defined chunking, delta transfer, compression, TCP concurrency, resumability, a global chunk store, adaptive scheduling, and per-chunk AES-GCM. None of these is approved for the present task. Numeric performance claims are likewise unverified targets or examples.
-
-## Decision required
-
-### Exact decision
-
-The Owner must first provide `agent/task.md` with:
-
-1. a stable Task ID;
-2. the requested outcome and explicit non-goals;
-3. acceptance criteria;
-4. the approved product scope relevant to that outcome; and
-5. links or declarations identifying which proposal decisions, if any, have been accepted.
-
-If the task authorizes implementation of the proposed DeltaSync system or one of its architecture-bearing slices, the human decision-maker must also resolve the applicable blocking choices already enumerated in `docs/00_documentation_plan.md:217-247`, especially:
-
-- v1 transfer direction and semantics;
-- filesystem scope and destination replacement behavior;
-- deployment/trust model;
-- transport security and authentication boundary;
-- immutable logical CDC chunks versus adaptive transport segmentation;
-- connection/concurrency model or authority to select it through an ADR/prototype; and
-- persistence constraints and multi-client concurrency requirements.
-
-### Available options and trade-offs
-
-1. **Provide a narrowly scoped task.** Define one vertical slice or documentation/decision deliverable and answer only the architectural questions that affect it. This minimizes premature design, but later slices may require additional ADRs or contract evolution.
-2. **Create an architecture-definition task for the complete v1 system.** Resolve the seven blocking choices before any Builder implementation. This produces coherent system-wide contracts, but requires more up-front product decisions and delays coding.
-3. **Approve the roadmap as written.** This is not recommended: it would silently accept contradictory or incomplete behavior around adaptive chunking, resume ownership, security, persistence, retries, and multi-source transfer.
-
-### Recommendation
-
-Choose option 1 unless the immediate goal is explicitly to establish all v1 contracts. Start with a correctness-first, single-file transfer slice and treat broader features as separately approved work. The exact slice and its architectural boundaries must still be recorded in `agent/task.md`; this recommendation is not approval of a product scope.
-
-### Work blocked by the decision
-
-- Determining whether architecture is required for the actual task.
-- Assigning stable component ownership and dependencies.
-- Defining public or internal interfaces, protocol framing, state machines, and compatibility rules.
-- Selecting or designing persistent state and migrations.
-- Giving the Builder an exact implementation sequence or file list.
-- Defining task-specific tests and declaring `READY_FOR_BUILD`.
-
-## Proposed architecture
-
-No architecture is approved in this plan. Adopting a concrete module topology now would convert an unapproved roadmap into product constraints without a task contract.
-
-After the missing decisions are supplied, the next Architect pass should produce a plan for only the selected task. If the task is architecture-bearing, that plan should preserve these preliminary separation principles unless an approved ADR says otherwise:
-
-- logical content chunks and their identities are distinct from transport scheduling or segmentation;
-- protocol parsing/validation is separated from file, chunk-store, and reconstruction operations;
-- durable transfer state has one authoritative owner and crash-consistent update rules;
-- optimization policy cannot bypass integrity, authentication, authorization, resource bounds, or atomic publication;
-- benchmark policy and telemetry do not become correctness dependencies.
-
-These are boundaries to evaluate, not accepted interfaces.
+1. Use CMake as the only build definition and Ninja on the documented Linux x86-64 baseline. Use vcpkg manifest mode with a repository-pinned vcpkg commit and baseline. CMake consumes package targets through find_package; business code has no package-manager paths. This resolves the mechanism for TBD-ENG-DEP-001. The Builder selects and records exact working GCC, Clang, CMake, Ninja, vcpkg, dependency/port, test-framework, and analysis/scanning versions and licenses from the actual Linux CI image. If a required vcpkg port, license, or build mode is unsuitable, the engineering standard already permits a documented alternative pinned mechanism with evidence. Do not use unpinned FetchContent or link unused future runtime libraries merely to claim integration.
+2. Create a reusable spoink_support target, a unit-test target, and an installable spoink executable with the already documented version command for package smoke. Developer, CI, ASan+UBSan, and release configure/build/test presets share the same CMake definitions. GCC and Clang use separate CI build trees. Apply warning failures to project targets, with third-party headers marked external/system. Preserve runtime validation in release builds.
+3. Keep domain-neutral types and policies in include/spoink/support/ and src/support/, with focused tests in tests/unit/. These files have no dependency on CLI, sockets, TLS, SQLite, codecs, filesystem state, or transfer state. Create later module/test directories only as useful skeletons; do not add placeholder public APIs or empty libraries just to fill a diagram. Adapters will depend inward.
+4. Implement Result<T, Error>, including void, with explicit success/failure handling. Error carries stable code/category, retry class, safe message key, correlation ID, scope/resumability, and a local-only diagnostic as specified by the internal contracts and failure policy. Avoid choosing future wire error codes now. Provide checked unsigned 64-bit add/subtract/multiply and checked conversions to size_t and signed/library integer types before allocation or offset operations. Use distinct strong types for peer/transfer/request IDs, hashes, offsets, and byte lengths as needed; SHA-256 values hold exactly 32 bytes with explicit representation conversion. Digest computation and random ID generation belong to later cryptographic/identity modules. Use an injectable monotonic clock and deterministic fake clock; keep UTC wall time separate. Provide narrow move-only RAII wrappers for resources actually exercised in M0, such as a POSIX descriptor and scoped cleanup. Add TLS/SQLite-specific wrappers with their adapters later. Destructors must not throw.
+5. Run checked-in format verification, clang-tidy, GCC/Clang warnings-as-errors, unit tests, ASan+UBSan, dependency/lock/license/security and secret scans, relative-link/ID documentation checks, and clean install smoke in CI or the documented equivalent. Add a separate TSan job when concurrency-focused code and tests exist, as agent/task.md directs. Protocol, persistence, TLS, E2E, fuzz, and performance jobs become required as their features land. A scanner invocation without a reviewed result does not satisfy the check.
 
 ## Components and ownership boundaries
 
-Component ownership cannot be finalized. Candidate concerns visible in the proposal are:
+| Component | M0 owner | Allowed dependency | Excluded behavior |
+|---|---|---|---|
+| Support values/policy | spoink_support | C++17 library, narrow Linux RAII adapter | Network, file-transfer state, cryptography, SQLite, codec policy |
+| CLI/package smoke | spoink executable | Support and build-version metadata | Pairing, send/receive, state initialization, doctor |
+| Test harness | Unit target | Support and pinned test framework | Production logic duplicated in tests |
+| Build/quality | CMake/presets/CI | Pinned toolchain/dependencies | Changes to accepted ADRs or M1-M5 product behavior |
 
-- content chunking, hashing, and manifest creation;
-- manifest comparison and transfer planning;
-- transport protocol and bounded concurrency;
-- compression and encryption transforms;
-- persistent chunk and transfer-state storage;
-- verified reconstruction and atomic destination publication;
-- adaptive scheduling and telemetry.
+The Builder may choose private filenames and local C++ API details while preserving these boundaries and the approved IC-001-012 conventions. Do not freeze wire, storage, or additional CLI behavior in M0.
 
-The next plan must decide which of these are in scope and ensure each persistent datum and state transition has one authoritative owner. The roadmap's suggested folders are not binding.
+## Interfaces, data flow, and persistent state
 
-## Interfaces, data flow, and persistent-state changes
+The M0 runtime path is spoink version to build/version metadata to stdout and successful exit. Unit tests call the support target directly. No application persistence, transfer session, manifest, or network data flow exists in M0. The vcpkg baseline and presets are repository-controlled build state, not Spoink data schemas. There is no migration. Unimplemented commands must not claim success.
 
-No interface or persistent-state change is authorized. Required contracts depend on the missing task and decisions. In particular, the Architect must not freeze chunk identity, manifest format, wire framing, acknowledgement/idempotency semantics, on-disk layout, encryption metadata, or recovery checkpoints from roadmap prose alone.
+## Exact implementation sequence for the Builder
 
-## Exact implementation sequence
-
-Builder implementation is blocked. The required sequence before build work is:
-
-1. Owner creates `agent/task.md` with the information listed under **Decision required**.
-2. Human decision-maker approves the relevant product/security/persistence choices or explicitly scopes them out.
-3. Architect re-inspects the repository and writes a task-specific plan with verified interfaces, state ownership, files, compatibility behavior, and tests.
-4. Builder implements only after this plan is replaced with `Status: READY_FOR_BUILD` (or an assessment with `Status: NOT_REQUIRED`).
+1. Record starting Git status and preserve existing uncommitted documentation edits. Read agent/task.md and the approved sources cited here.
+2. Select a working Linux x86-64 GCC/Clang, CMake, Ninja, and vcpkg toolchain. Pin exact versions/baseline, select a test framework, verify required dependency availability and licenses, and record evidence. Resolve TBD-ENG-DEP-001 consistently in the relevant documentation; leave later milestone experiments and limits unresolved at their stated gates.
+3. Add root CMake configuration, install rules, version metadata, developer/CI/sanitizer/release configure/build/test presets, and the minimal spoink version path. A fresh build must not depend on developer-local package-manager paths.
+4. Add the support target with Result/Error, checked arithmetic/conversion, strong types, injectable time, and narrow RAII ownership.
+5. Add focused tests for error propagation/metadata; overflow, underflow, and narrowing; type and representation invariants; fake-time advancement; and cleanup, move, reset, and error paths for actual resource wrappers.
+6. Add .clang-format and .clang-tidy, reproducible check commands, GCC/Clang debug and release-representative CI, ASan+UBSan, tests, install smoke, dependency/secret checks, and documentation relative-link/ID validation. Document the TSan trigger for concurrent code/tests.
+7. Document exact fresh-checkout bootstrap, configure, build, ctest, install, and version-smoke commands. Update traceability to actual M0 paths/tests and update the engineering, operations, consistency, and readiness records for the selected toolchain/dependencies.
+8. Run the documented commands on the supported Linux baseline. Inspect Git status/diff for unrelated changes. Write agent/builder/implementation-report.md for M0-001 with changed files, versions/licenses, commands/results, deviations, and remaining limits. Submit to independent Reviewer verification.
 
 ## Files expected to change
 
-- `agent/task.md` — must be created by the Owner/task authority; this Architect will not invent its contents.
-- `agent/architecture/current-plan.md` — must be replaced by the Architect after the task and decisions exist.
-- Production, test, migration, build, and configuration file changes — **cannot be identified yet**.
+- Build/dependencies: CMakeLists.txt, CMakePresets.json, cmake/ as needed, vcpkg.json, a repository-controlled vcpkg pin/bootstrap artifact, and .gitignore only for new generated outputs.
+- Source/tests: include/spoink/support/, src/support/, a minimal src/cli/ or equivalent executable entry point, and tests/unit/. Other module/test directories are optional until used.
+- Quality: .clang-format, .clang-tidy, a checked-in CI workflow such as .github/workflows/, and narrowly scoped documentation/scan scripts or configuration.
+- Documentation: docs/16_operations/16_01_local_development_and_deployment.md or an appropriate root developer README for actual commands; docs/13_engineering/13_01_engineering_standards.md, docs/00_governance/00_03_traceability_matrix.md, docs/24_consistency_review.md, and docs/25_implementation_readiness_review.md for actual paths and dependency/toolchain resolution. Update other approved documents only if an M0 choice affects them.
+- Handoff: the Builder updates its own agent/builder/implementation-report.md for this Task ID. This Architect does not edit it.
+
+These are expected targets, not a requirement to create unused files. All roles must use this same checkout under agent/task.md; the current plan and existing handoffs are tracked despite the untracked .gitignore pattern.
 
 ## Compatibility and migration considerations
 
-There is no existing implementation or persisted format to migrate. Nevertheless, any first accepted manifest, wire protocol, chunk identity rule, or disk format will establish future compatibility constraints. The task-specific plan must define versioning and unknown-version rejection before those formats are implemented.
+M0 creates no wire or disk format and needs no data migration. Treat shared support headers as source-level internal contracts; do not promise a stable installed C++ ABI. Any later serialized ID, error, or hash representation follows the appropriate contract and compatibility process. Do not embed absolute developer paths in build artifacts or instructions. Record a controlled update procedure for pinned tools/dependencies.
 
-## Security and failure-mode considerations
+## Security and failure modes
 
-The current proposal does not define a complete security boundary. Per-chunk AES-GCM alone does not decide peer authentication, authorization, key establishment/storage, nonce uniqueness, replay/downgrade protection, or metadata integrity. Global plaintext-hash deduplication may also disclose content equality across trust domains.
+Dependencies are acquired at build time only; runtime must not download code. Verify provenance, licenses, versions, and scanner findings. Do not commit secrets, local state, or generated build outputs. Unsupported compiler/dependency configurations fail clearly. Checked arithmetic returns failure before overflow, narrowing, or allocation. RAII wrappers release exactly once and leave moved-from objects inert. Local diagnostics remain separate from safe public messages. Fix sanitizer/analysis failures or document narrow reviewed suppressions under the engineering rules.
 
-No network-facing or persistent implementation should be declared build-ready until the applicable plan defines:
+## Acceptance criteria and required verification
 
-- trusted principals and data exposure;
-- path normalization and destination authorization;
-- bounded sizes/counts, decompression limits, quotas, and concurrency;
-- authenticated protocol negotiation and cryptographic lifecycle, if encryption is in scope;
-- idempotent retry and acknowledgement behavior;
-- atomic durable updates and crash recovery;
-- integrity verification before final destination publication; and
-- safe handling of corrupt state, interrupted writes, network loss, and process termination.
-
-## Acceptance criteria
-
-This blocking plan is resolved only when:
-
-- `agent/task.md` exists and names a Task ID, scope, non-goals, and testable acceptance criteria;
-- every architecture-affecting decision needed by that scope is approved or explicitly deferred out of scope;
-- proposal statements are clearly classified as accepted requirement, assumption, experiment, or rejected idea;
-- a subsequent Architect pass can unambiguously issue `READY_FOR_BUILD` or `NOT_REQUIRED`; and
-- the Builder can implement without making product, security-boundary, persistent-format, or public-contract decisions.
-
-## Required tests and verification
-
-No task-specific test suite can be prescribed yet. Before the next Architect pass, verify:
-
-- the Task ID and acceptance criteria are internally consistent;
-- referenced decisions have an authoritative approval record; and
-- the repository inventory has not gained relevant source, tests, migrations, configuration, or architecture documents that were omitted from review.
-
-If implementation is later authorized, its plan must require proportionate unit, property/fuzz, protocol integration, crash-recovery, security-negative, compatibility, and end-to-end integrity tests for the components actually in scope. Benchmark targets must be validated separately from correctness gates.
+1. Fresh Linux x86-64 checkout completes documented cmake --preset dev, cmake --build --preset dev, ctest --preset dev, install, and spoink version smoke without a hidden local prerequisite.
+2. Developer, CI, ASan+UBSan, and release presets work on documented platforms. GCC and Clang CI compile project code as C++17 with warnings and warnings-as-errors; third-party warnings are external.
+3. Focused support tests cover meaningful success/error, arithmetic boundaries, type invariants, fake time, and actual owned-resource cleanup. ASan+UBSan pass.
+4. Format, clang-tidy, tests, dependency/secret, docs-link/ID, and install checks are reproducible and in CI or an equivalent documented gate. TSan is deferred until concurrency tests exist.
+5. Repository-controlled artifacts record exact toolchain/dependency versions or baseline, licenses, and notices; TBD-ENG-DEP-001 is resolved with working-build/license evidence.
+6. No transfer behavior, persisted schema, protocol format, trust-policy change, CDC/compression/scheduler implementation, performance result, or v1 release claim is introduced. Existing uncommitted edits are preserved.
+7. Builder reports actual work and commands. A separate Reviewer inspects the repository and reports PASS or FAIL with evidence. Architect closure follows review, not this plan alone.
 
 ## Explicit assumptions
 
-- **Assumption A1:** The missing `agent/task.md` is an orchestration omission, not permission to infer the entire roadmap as the task.
-- **Assumption A2:** `docs/00_documentation_plan.md` accurately describes its own approval state.
-- **Assumption A3:** No out-of-repository roadmap statement is authoritative unless the Owner cites it in the task or an approved decision artifact.
-- **Assumption A4:** The Builder must not begin production implementation from this blocking plan.
+- A1, verified basis: Current documentation statuses are the Owner-approved authority for M0, as agent/task.md states; the external roadmap remains input evidence.
+- A2, implementation assumption: The Builder can obtain a supported Linux x86-64 CI environment and usable pinned vcpkg baseline. Concrete port/license/build evidence may invoke the already approved alternate pinned mechanism; a material change to an accepted dependency or platform boundary returns to the Architect.
+- A3, implementation assumption: A minimal spoink version command is enough for M0 installed-binary smoke. Other CLI commands belong to later milestones.
+- A4, scope assumption: M0 support C++ APIs may evolve before first external use while preserving approved result/error, ownership, type-safety, and dependency conventions.
 
-No project-product assumptions from `docs/00_documentation_plan.md` are promoted to facts here.
+## Builder instructions and boundaries
 
-## Instructions and boundaries for the Builder
-
-- Do not modify production code under this plan.
-- Do not create public interfaces, wire/disk formats, schemas, cryptographic behavior, or concurrency models from the roadmap alone.
-- Do not treat proposed numeric benchmarks as acceptance criteria.
-- Return control to the Owner for the missing task contract and required human decisions.
-- Begin implementation only after this artifact is replaced by a plan marked `READY_FOR_BUILD`, or by an assessment marked `NOT_REQUIRED` for the same Task ID.
+Build M0 autonomously within this plan and the approved corpus. Choose exact tool and library versions, test framework, scanner, private file layout, and naming details from working evidence; record them. Preserve the dirty worktree. Return to the Architect only if concrete evidence requires changing an accepted ADR, supported platform, trust model, public contract, or material dependency/license boundary. Do not implement M1-M5 behavior to populate skeletons or CI jobs.

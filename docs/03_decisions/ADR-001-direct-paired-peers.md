@@ -9,7 +9,7 @@ The source roadmap used client/server wording, but the approved product directio
 
 ## Decision
 
-DeltaSync v1 has no permanent central server. Each installed device has the same peer application and persistent identity. For each session, one device temporarily listens as receiver and the other connects as sender. The roles can reverse in a later session.
+Spoink v1 has no permanent central server. Each installed device has the same peer application and persistent identity. For each session, one device temporarily listens as receiver and the other connects as sender. The roles can reverse in a later session.
 
 V1 uses explicit LAN addressing. One session has exactly one sender and one receiver. Automatic discovery, NAT traversal, relays, multi-source transfer, and automatic bidirectional synchronization are outside v1.
 

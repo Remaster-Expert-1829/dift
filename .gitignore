@@ -1,0 +1,8 @@
+.obsidian
+agent
+/.vcpkg/
+/out/
+/install/
+/compile_commands.json
+__pycache__/
+*.py[cod]

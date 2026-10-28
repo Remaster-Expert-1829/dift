@@ -5,7 +5,7 @@
 ## General syntax
 
 ```text
-deltasync [global-options] <command> [command-options]
+spoink [global-options] <command> [command-options]
 ```
 
 Global options:
@@ -21,7 +21,7 @@ Unknown options and missing arguments are usage errors. Paths follow the local f
 ## CLI-001 — Initialize
 
 ```text
-deltasync init --name <device-name>
+spoink init --name <device-name>
 ```
 
 Creates identity and schema if absent. Existing identity returns success with its peer ID unless `--reset-identity` is supplied; reset requires an interactive typed confirmation and is a distinct destructive workflow. Standard output includes device name and peer ID, never the private key.
@@ -29,8 +29,8 @@ Creates identity and schema if absent. Existing identity returns success with it
 ## CLI-002 — Pair
 
 ```text
-deltasync pair --listen <host:port>
-deltasync pair <host:port>
+spoink pair --listen <host:port>
+spoink pair <host:port>
 ```
 
 The first form waits for exactly one explicit pairing attempt. The second initiates it. Both display peer name, full peer ID, and the same SAS, then prompt `Codes match? [y/N]`. Non-interactive pairing is not supported in v1.
@@ -38,7 +38,7 @@ The first form waits for exactly one explicit pairing attempt. The second initia
 ## CLI-003 — Receive
 
 ```text
-deltasync receive --listen <host:port> --dest <directory> [--from <peer-id>]
+spoink receive --listen <host:port> --dest <directory> [--from <peer-id>]
 ```
 
 The receiver validates state/store/destination roots and prints its local peer ID and listen address. Offers display peer, file count, logical bytes, paths, and overwrite request. Default interactive answer is reject. `--from` narrows the allowed paired peer but does not bypass offer approval.
@@ -48,11 +48,11 @@ Unattended allow rules are deferred; `--yes` does not approve network offers in 
 ## CLI-004 — Send and resume
 
 ```text
-deltasync send <host:port> <input>... [--root <directory>]
+spoink send <host:port> <input>... [--root <directory>]
                [--overwrite] [--compression off|lz4|zstd|auto]
                [--connections <count>] [--static-scheduler]
 
-deltasync resume <host:port> --transfer <id>
+spoink resume <host:port> --transfer <id>
 ```
 
 Selection rules:
@@ -68,9 +68,9 @@ Selection rules:
 ## CLI-005 — Inspect status
 
 ```text
-deltasync sessions list [--state <state>]
-deltasync sessions inspect <transfer-id>
-deltasync report <transfer-id> [--output text|jsonl]
+spoink sessions list [--state <state>]
+spoink sessions inspect <transfer-id>
+spoink report <transfer-id> [--output text|jsonl]
 ```
 
 Reports distinguish logical, useful, reused, encoded, application-framing, and observed wire bytes; unavailable values are `null` in JSONL and “unavailable” in text.
@@ -78,13 +78,13 @@ Reports distinguish logical, useful, reused, encoded, application-framing, and o
 ## CLI-006 — Trust and store maintenance
 
 ```text
-deltasync peers list
-deltasync peers revoke <peer-id>
-deltasync store inspect [--verify sample|full]
-deltasync store gc --dry-run
-deltasync store gc --execute
-deltasync doctor
-deltasync version
+spoink peers list
+spoink peers revoke <peer-id>
+spoink store inspect [--verify sample|full]
+spoink store gc --dry-run
+spoink store gc --execute
+spoink doctor
+spoink version
 ```
 
 Revocation and actual GC require confirmation when interactive. `--execute` expresses GC intent but does not weaken reference/lease checks. `doctor` is read-only unless an explicit future repair subcommand is used.
@@ -119,7 +119,7 @@ Signal termination follows shell conventions where possible; state safety is sti
 Highest wins:
 
 1. CLI option.
-2. `DELTASYNC_*` environment variable for documented non-secret settings.
+2. `SPOINK_*` environment variable for documented non-secret settings.
 3. Selected config file.
 4. System/user config file.
 5. Documented default.

@@ -4,7 +4,7 @@
 
 ## Process structure
 
-One `deltasync` executable selects a command role. The implementation MAY use an event loop, threads, or both, but MUST preserve these logical executors:
+One `spoink` executable selects a command role. The implementation MAY use an event loop, threads, or both, but MUST preserve these logical executors:
 
 - control executor: ordered session state and protocol decisions;
 - filesystem/hash workers: bounded source read, CDC, digest, and reconstruction work;

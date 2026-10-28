@@ -5,7 +5,7 @@
 
 ## UC-001 — Initialize and pair two devices
 
-**Preconditions:** DeltaSync is installed. Devices are on a reachable local network. Users can see both terminals.
+**Preconditions:** Spoink is installed. Devices are on a reachable local network. Users can see both terminals.
 
 ```mermaid
 sequenceDiagram
@@ -13,8 +13,8 @@ sequenceDiagram
     participant R as Receiver peer
     participant S as Sender peer
     participant SO as Sender operator
-    RO->>R: deltasync pair --listen <address>
-    SO->>S: deltasync pair <receiver-address>
+    RO->>R: spoink pair --listen <address>
+    SO->>S: spoink pair <receiver-address>
     S->>R: TLS 1.3 handshake with device certificates
     R-->>S: Encrypted pairing channel
     R->>RO: Display peer name/fingerprint and SAS
@@ -32,8 +32,8 @@ sequenceDiagram
 
 **Preconditions:** Devices are paired. Receiver is listening with an approved destination root.
 
-1. Receiver runs `deltasync receive --dest <root> --listen <address>`.
-2. Sender runs `deltasync send <receiver-address> <file-or-directory>...`.
+1. Receiver runs `spoink receive --dest <root> --listen <address>`.
+2. Sender runs `spoink send <receiver-address> <file-or-directory>...`.
 3. Sender enumerates regular files, normalizes relative paths, chunks/hashes them, and constructs an immutable manifest.
 4. Peers authenticate using pinned device identities.
 5. Receiver displays peer, file count, logical bytes, destination paths, and overwrite request.

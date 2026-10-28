@@ -111,7 +111,7 @@ Performance regressions use baseline tolerances established from stable CI hardw
 ## What does not require direct testing
 
 - Trivial accessors or compiler-generated operations without logic.
-- Third-party library internals already covered upstream; DeltaSync wrappers and configuration/error handling still require tests.
+- Third-party library internals already covered upstream; Spoink wrappers and configuration/error handling still require tests.
 - Pure formatting details unless they are machine-readable CLI contracts or accessibility behavior.
 
 ## Test data

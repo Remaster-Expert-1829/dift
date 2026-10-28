@@ -22,6 +22,12 @@
 
 If vcpkg cannot supply a required library/license/build mode on the selected Linux CI image, `TBD-ENG-DEP-001` permits switching to another pinned mechanism through a documentation change; it does not justify unpinned `FetchContent`.
 
+### M0 dependency resolution (`TBD-ENG-DEP-001`)
+
+M0 resolves `TBD-ENG-DEP-001` for the current skeleton. The repository uses vcpkg manifest mode with baseline commit `74e6536215718009aae747d86d84b78376bf9e09` (vcpkg release `2025.10.17`) and a `Catch2 3.11.0#0` test-only dependency. The baseline is locked in `vcpkg-configuration.json`; the dependency override is locked in `vcpkg.json`; licenses and port-tree evidence are recorded in `third_party/NOTICE.md`. `cmake/bootstrap-vcpkg.sh` obtains precisely that baseline and rejects a different existing checkout. No future runtime dependency is declared or linked during M0.
+
+The M0 Linux CI baseline is Ubuntu 24.04 with CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0, and LLVM/Clang/clang-tidy/clang-format 18.1.3. CI installs the corresponding packages, uses the selected compiler paths in CMake presets, and runs `scripts/check-toolchain.py`, which parses authoritative version tokens and rejects any value other than those exact reviewed versions. A developer build may happen to work with a newer distribution package; that is not an M0 toolchain-lock claim until it is reviewed and the pinned records are updated. Tool-license notices and the controlled update procedure are in `third_party/NOTICE.md` and the operations guide.
+
 ## Formatting, linting, and analysis
 
 - One checked-in `.clang-format` defines formatting; CI verifies no diff after formatting.

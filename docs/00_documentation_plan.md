@@ -1,4 +1,4 @@
-# DeltaSync Documentation Plan
+# Spoink Documentation Plan
 
 > Status: **APPROVED WITH DIRECT-TRANSFER AMENDMENT — 2026-09-22**  
 > Purpose: Establish the project classification, documentation structure, assumptions, unknowns, and required product/architecture decisions before implementation documentation is written.  
@@ -11,7 +11,7 @@ Sections 3–6 retain the initial planning record. Their unknowns/questions are 
 
 **Classification: Tier 3 — Complex, scoped as a solo production-oriented prototype.**
 
-DeltaSync combines a custom network protocol, content-defined chunking (CDC), delta transfer, compression routing, resumable state, concurrent transfer, adaptive scheduling, encryption, cross-transfer deduplication, persistence, observability, and reproducible performance evaluation. These concerns interact in ways that create distributed-systems, data-integrity, security, and recovery requirements even if the first release consists of only two executables.
+Spoink combines a custom network protocol, content-defined chunking (CDC), delta transfer, compression routing, resumable state, concurrent transfer, adaptive scheduling, encryption, cross-transfer deduplication, persistence, observability, and reproducible performance evaluation. These concerns interact in ways that create distributed-systems, data-integrity, security, and recovery requirements even if the first release consists of only two executables.
 
 The Tier 3 classification does **not** imply microservices, cloud infrastructure, a relational database, event sourcing, or enterprise deployment. The documentation will remain proportional to a solo C++ prototype and will omit sections that do not serve implementation.
 
@@ -19,7 +19,7 @@ The Tier 3 classification does **not** imply microservices, cloud infrastructure
 
 | Category | Current interpretation |
 |---|---|
-| Product | A file-transfer/synchronization engine named DeltaSync |
+| Product | A file-transfer/synchronization engine named Spoink |
 | Intended value | Avoid retransmitting unchanged content; avoid wasteful compression; sustain useful throughput under changing network conditions; resume interrupted work |
 | Likely users | Developers, systems learners/reviewers, and operators transferring large files between controlled hosts |
 | Delivery shape | Command-line peer application with temporary sender/receiver roles, plus benchmark and telemetry tooling |
@@ -152,7 +152,7 @@ All assumptions below are provisional and must be confirmed, replaced by a decis
 
 | ID | Assumption | Classification | Confirmation path |
 |---|---|---|---|
-| ASM-001 | DeltaSync is currently a solo portfolio/research-grade prototype, not a public production service with an SLA. | Product/scope | User approval |
+| ASM-001 | Spoink is currently a solo portfolio/research-grade prototype, not a public production service with an SLA. | Product/scope | User approval |
 | ASM-002 | Version 1 is a command-line peer application. During a transfer one device sends and the other temporarily receives; no permanent central server exists. | Approved product/architecture decision | Direct-transfer approval |
 | ASM-003 | Large regular files are the primary workload. Directory trees, symlinks, sparse files, permissions, and extended attributes are not assumed in scope. | Product | Scope decision |
 | ASM-004 | Linux is at least the benchmark platform because the proposed test plan depends on `tc netem`; portability is unresolved. | Operational | Platform decision |
@@ -282,7 +282,7 @@ No architecture in the source roadmap is accepted merely by appearing there. Aft
 
 ### Plain-language model
 
-DeltaSync v1 will let one device **send a batch of ordinary files directly** to another device on the same local network. There is no permanent central server. Both machines are controlled by the same person or trusted team. The sender and receiver prove their identities with certificates, then communicate through encrypted TLS connections. Files are divided into stable content-defined chunks so later transfers can reuse unchanged data. Several files and chunks may be processed concurrently, but concurrency is bounded to prevent resource exhaustion.
+Spoink v1 will let one device **send a batch of ordinary files directly** to another device on the same local network. There is no permanent central server. Both machines are controlled by the same person or trusted team. The sender and receiver prove their identities with certificates, then communicate through encrypted TLS connections. Files are divided into stable content-defined chunks so later transfers can reuse unchanged data. Several files and chunks may be processed concurrently, but concurrency is bounded to prevent resource exhaustion.
 
 The receiving device records manifests and transfer state in SQLite and stores chunk bytes in a content-addressed filesystem store. Interrupted sessions resume from the receiver's durable record of verified chunks. Either device can be the receiver in a later transfer. Network adaptation may change how much work is in flight and how many data connections are active; it must never redefine the logical chunks in an active manifest.
 

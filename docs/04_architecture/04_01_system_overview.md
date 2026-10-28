@@ -7,8 +7,8 @@
 
 ```mermaid
 flowchart LR
-    U1[Sender operator] --> P1[DeltaSync peer\nSender role]
-    P1 <-->|TLS 1.3 over LAN\ncontrol + bounded data pool| P2[DeltaSync peer\nReceiver role]
+    U1[Sender operator] --> P1[Spoink peer\nSender role]
+    P1 <-->|TLS 1.3 over LAN\ncontrol + bounded data pool| P2[Spoink peer\nReceiver role]
     U2[Receiver operator] --> P2
     P1 --> S1[(Local identity/config\nand source files)]
     P2 --> S2[(SQLite metadata)]

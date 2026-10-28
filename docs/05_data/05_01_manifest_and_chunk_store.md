@@ -15,7 +15,7 @@
 └── reports/               optional non-secret transfer summaries
 
 <destination-root>/
-└── .deltasync-staging/<transfer-id>/...  staged reconstruction
+└── .spoink-staging/<transfer-id>/...  staged reconstruction
 ```
 
 Exact configurable roots are operational details. Canonical chunk filenames use the 64-character lowercase SHA-256 hex digest. Fan-out uses the first two and next two hex characters. No network-provided path is concatenated directly into a store path.

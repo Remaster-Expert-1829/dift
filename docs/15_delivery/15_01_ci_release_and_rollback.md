@@ -59,7 +59,7 @@ Signing release artifacts is recommended and becomes mandatory before public dis
 
 ## Rollback
 
-Because DeltaSync is local software, rollback means reinstalling a prior compatible binary and restoring metadata only when schema compatibility requires it.
+Because Spoink is local software, rollback means reinstalling a prior compatible binary and restoring metadata only when schema compatibility requires it.
 
 - If the prior binary supports the current DB/protocol, stop processes and reinstall it.
 - If not, restore the pre-migration SQLite backup and matching chunk-store snapshot/consistency point, then run `doctor`/reconciliation.

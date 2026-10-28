@@ -13,7 +13,7 @@
 - **Input:** `init` request and optional display name.
 - **Output:** Locally stored private key, self-signed device certificate, stable peer fingerprint, and non-secret device metadata.
 - **Behavior:** The application MUST generate identity material using the approved TLS library and cryptographically secure randomness. It MUST refuse insecure private-key permissions.
-- **Constraints:** Private keys never leave the device through DeltaSync. Re-initialization MUST require explicit confirmation because it invalidates existing pairings.
+- **Constraints:** Private keys never leave the device through Spoink. Re-initialization MUST require explicit confirmation because it invalidates existing pairings.
 - **Acceptance:** A fresh device obtains a stable fingerprint; a second normal initialization does not replace it; private key material is not printed or logged.
 
 #### FR-002 — First-time pairing
