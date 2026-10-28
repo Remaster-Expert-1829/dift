@@ -1,18 +1,19 @@
 # Implementation Report
 
 - Task ID: `M0-001`
-- Iteration number: 3
+- Iteration number: 5
 - Status: `READY_FOR_REVIEW`
 
 ## Requirement implemented
 
-Iteration 3 repairs Independent Review iteration 5: exact tool-version parsing/equality validation with automated deceptive-version tests; CMake preset minimum 3.28.3; CI validation in every build/analysis environment; complete C++ formatting; enforceable clang-tidy naming rules and documented narrow suppressions; a controlled bad-project-header clang-tidy check; and artifact definition/reference validation with focused tests. M0 remains a C++17 build and quality foundation only: no transfer, protocol, storage, TLS, CDC, compression, scheduler, telemetry, or benchmark behavior was introduced.
+Iterations 4 and 5 repair Independent Review iteration 7: every affected GitHub Actions job adds `/usr/bin` through `GITHUB_PATH` in one step, then separately asserts `command -v cmake` and `command -v ninja` before exact toolchain validation and all substantive work. This selects CMake 3.28.3 and Ninja 1.11.1 instead of the runner toolcache. The pull-request workflow also has the narrowly scoped `pull-requests: write` permission required by GitHub's dependency-review action. M0 remains a C++17 build and quality foundation only: no transfer, protocol, storage, TLS, CDC, compression, scheduler, telemetry, or benchmark behavior was introduced.
 
 ## Files created, modified, or removed
 
 - Created build/dependency files: `CMakeLists.txt`, `CMakePresets.json`, `vcpkg.json`, `vcpkg-configuration.json`, and `cmake/bootstrap-vcpkg.sh`.
 - Created support code: `include/spoink/support/*`, `src/support/*`, `src/cli/main.cpp`, and five `tests/unit/*_test.cpp` files.
 - Created quality artifacts: `.clang-format`, `.clang-tidy`, `.github/workflows/ci.yml`, `scripts/check-dependencies.py`, `scripts/check-docs.py`, and `third_party/NOTICE.md`.
+- Modified `.github/workflows/ci.yml` in repair commit `8146ad23d1338d6f5f09ae89b35ce97945393a99` to select and assert `/usr/bin/cmake` and `/usr/bin/ninja` before the exact-version gate, and in `2c874026f664d17566f8e73700e33de1324df8ea` to grant dependency-review its required PR-only permission.
 - Added validator tests: `tests/scripts/test_check_toolchain.py` and `tests/scripts/test_check_docs.py`, plus `scripts/verify-clang-tidy-header-gate.py`.
 - Updated `.gitignore`; M0-specific additions to engineering, operations, traceability, consistency, and readiness documentation; replaced this stale report.
 - Existing dirty documentation changes were preserved. Several modified documentation files predated this iteration.
@@ -58,9 +59,10 @@ None. Empty future libraries and placeholder APIs were intentionally omitted. TS
 | `python3 scripts/verify-clang-tidy-header-gate.py` | Passed; a temporary lower-case type in a project header was rejected. |
 | `cmake --preset dev`, `cmake --build --preset dev`, `ctest --preset dev`, install, version smoke | Passed: 10/10 tests; executable-only install; `spoink 0.1.0`. |
 | `cmake --preset ci-gcc && cmake --build --preset ci-gcc && ctest --preset ci-gcc` | Passed: 10/10 tests with GCC 13.3.0. |
+| GitHub Actions push run `40687177678` | Passed: repository-checks, ci-gcc, ci-clang, release, clang-tidy/header gate, ASan/UBSan, and secrets. https://github.com/Remaster-Expert-1829/dift/actions/runs/40687177678 |
+| GitHub Actions pull-request run `40688579416` (rerun after Dependency Graph was enabled) | Passed: dependency-review, repository-checks, ci-gcc, ci-clang, release, clang-tidy/header gate, ASan/UBSan, and secrets. Each non-meta job completed its configure/build/test or analysis work after the `/usr/bin` path assertion. https://github.com/Remaster-Expert-1829/dift/actions/runs/40688579416 |
 | JSON parsing of CMake/vcpkg configuration | Passed. |
 | `git diff --check` | Passed. |
-| Host probes for WSL, Docker/Podman, CMake, Ninja, GCC/Clang, and Python | No Linux distribution, container runtime, CMake/Ninja, or supported Linux compiler toolchain is installed. |
 
 ## Observed verification results
 
@@ -84,7 +86,7 @@ Ubuntu 24.04 WSL verification completed: CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0,
 | Fresh Linux configure/build/test/install | Passed on Ubuntu 24.04 WSL. |
 | Presets; GCC/Clang warnings-as-errors; ASan/UBSan; release | Passed on Ubuntu 24.04 WSL: each compiler preset built and passed 10/10 tests; the documented ASan/UBSan environment passed 10/10 tests; release passed 10/10 tests and its install/version smoke printed `spoink 0.1.0`. |
 | Focused M0 support tests | Passed: 10/10 tests. |
-| Quality/scan/documentation CI | Validators, complete staged-source formatter, clang-tidy build/header negative test, dependency check, and docs check passed locally. The checked-in hosted gitleaks/dependency-review workflow awaits the normal remote CI run. |
+| Quality/scan/documentation CI | Hosted push run 40687177678 and PR run 40688579416 passed repository checks (dependency, exact tools, validator tests, docs, formatting), GCC/Clang/release builds/tests, clang-tidy/header gate, ASan/UBSan, gitleaks, and dependency-review. |
 | Exact versions/licenses; `TBD-ENG-DEP-001` | Satisfied. |
 | Independent review | Pending. |
 
@@ -96,7 +98,7 @@ Ubuntu 24.04 WSL verification completed: CMake 3.28.3, Ninja 1.11.1, GCC 13.3.0,
 
 ## Remaining blockers
 
-None for local Builder completion. The normal remote CI run remains pending after the commit is pushed.
+None.
 
 ## Areas requiring focused review
 
