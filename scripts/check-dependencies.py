@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the M0 vcpkg baseline, test dependency, and notice synchronized."""
+"""Keep reviewed M1 vcpkg dependencies and notices synchronized."""
 
 from __future__ import annotations
 
@@ -26,12 +26,23 @@ def main() -> int:
         failures.append("Catch2 must be locked to vcpkg port 3.11.0#0")
     if "Catch2" not in notice or "3.11.0#0" not in notice or "BSL-1.0" not in notice:
         failures.append("third_party/NOTICE.md is missing Catch2 version or license")
+    expected = {"openssl": ("3.6.0", "Apache-2.0"), "sqlite3": ("3.51.2", "Public Domain"),
+                "utf8proc": ("2.11.3", "MIT")}
+    for name, (version, license_name) in expected.items():
+        entry = overrides.get(name, {})
+        actual = entry.get("version-semver", entry.get("version"))
+        if actual != version or entry.get("port-version") != 0:
+            failures.append(f"{name} must be locked to {version}#0")
+        if name not in {dependency.get("name") for dependency in manifest.get("dependencies", [])}:
+            failures.append(f"{name} must be a manifest dependency")
+        if version not in notice or license_name not in notice:
+            failures.append(f"third_party/NOTICE.md is missing {name} version or license")
 
     if failures:
         print("Dependency validation failed:", file=sys.stderr)
         print("\n".join(f"- {failure}" for failure in failures), file=sys.stderr)
         return 1
-    print("Validated vcpkg baseline, Catch2 lock, and license notice.")
+    print("Validated vcpkg baseline, M1 dependency locks, and license notices.")
     return 0
 
 

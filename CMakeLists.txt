@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.28.3)
 
 project(Spoink VERSION 0.1.0 LANGUAGES CXX)
 
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/schema/001_initial.sql" SPOINK_INITIAL_SCHEMA_SQL)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/initial_schema_sql.h.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/generated/spoink/offline/initial_schema_sql.h" @ONLY)
+
 include(CTest)
 
 option(SPOINK_WARNINGS_AS_ERRORS "Treat Spoink compiler warnings as errors" ON)
@@ -47,6 +51,19 @@ target_include_directories(spoink_support
 target_link_libraries(spoink_support PUBLIC spoink_project_options)
 set_target_properties(spoink_support PROPERTIES CXX_EXTENSIONS OFF)
 
+find_package(OpenSSL REQUIRED)
+find_package(SQLite3 REQUIRED)
+find_package(utf8proc CONFIG REQUIRED)
+
+add_library(spoink_offline
+  src/offline/offline.cpp
+)
+add_library(spoink::offline ALIAS spoink_offline)
+target_include_directories(spoink_offline PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_include_directories(spoink_offline PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_link_libraries(spoink_offline PUBLIC spoink::support OpenSSL::Crypto SQLite::SQLite3 utf8proc::utf8proc)
+set_target_properties(spoink_offline PROPERTIES CXX_EXTENSIONS OFF)
+
 add_executable(spoink src/cli/main.cpp)
 target_link_libraries(spoink PRIVATE spoink::support spoink_project_options)
 set_target_properties(spoink PROPERTIES CXX_EXTENSIONS OFF)
@@ -69,4 +86,27 @@ if(BUILD_TESTING)
 
   include(Catch)
   catch_discover_tests(spoink_support_tests)
+
+  add_executable(spoink_offline_tests
+    tests/unit/offline_test.cpp
+    tests/unit/offline_property_test.cpp
+    tests/unit/offline_fault_test.cpp
+  )
+  target_link_libraries(spoink_offline_tests PRIVATE spoink::offline Catch2::Catch2WithMain)
+  set_target_properties(spoink_offline_tests PROPERTIES CXX_EXTENSIONS OFF)
+  catch_discover_tests(spoink_offline_tests)
+
+  add_executable(spoink_offline_integration_test tests/integration/offline_integration_test.cpp)
+  target_link_libraries(spoink_offline_integration_test PRIVATE spoink::offline Catch2::Catch2WithMain)
+  set_target_properties(spoink_offline_integration_test PROPERTIES CXX_EXTENSIONS OFF)
+  catch_discover_tests(spoink_offline_integration_test)
 endif()
+
+# EXP-CDC-001 benchmark and golden-vector generator — built unconditionally
+add_executable(exp_cdc_001 benchmarks/exp_cdc_001/exp_cdc_001.cpp)
+target_link_libraries(exp_cdc_001 PRIVATE spoink::offline)
+set_target_properties(exp_cdc_001 PROPERTIES CXX_EXTENSIONS OFF)
+
+add_executable(exp_cdc_001_golden benchmarks/exp_cdc_001/gen_golden_vectors.cpp)
+target_link_libraries(exp_cdc_001_golden PRIVATE spoink::offline)
+set_target_properties(exp_cdc_001_golden PROPERTIES CXX_EXTENSIONS OFF)

@@ -1,5 +1,15 @@
 # Wire Protocol
 
+## M1 offline manifest CBOR clarification
+
+The schema-1 manifest keys are the literal keys documented in
+`05_data/05_01_manifest_and_chunk_store.md`: `created_at_unix_ms`, `files`,
+`profile`, `schema`, `profile_id`; file keys `chunks`, `path`, `sha256`, `size`;
+chunk keys `length`, `sha256`, `offset`; and profile keys `boundary_mask`,
+`boundary_value`, `max_bytes`, `min_bytes`, `polynomial`, `target_bytes`, and
+`window_bytes`. This is an offline M1 encoding clarification, not a network
+frame implementation.
+
 > Status: Approved for protocol major `1`; release safety ceilings remain `TBD-LIMITS-001`.  
 > Transport: TCP with TLS 1.3.  
 > Encoding decision: ADR-007.
