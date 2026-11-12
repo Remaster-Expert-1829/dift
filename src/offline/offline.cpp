@@ -11,8 +11,8 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <chrono>
 #include <cerrno>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -820,8 +820,7 @@ support::Result<void> MetadataStore::record_verified(const support::Sha256Digest
   if (sqlite3_prepare_v2(database_, sql, -1, &statement, nullptr) != SQLITE_OK)
     return support::Result<void>::failure(make_resource("m1.store.prepare"));
   const auto now_ms = static_cast<sqlite3_int64>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count());
   sqlite3_bind_blob(statement, 1, digest.bytes().data(), static_cast<int>(digest.bytes().size()), SQLITE_TRANSIENT);
   sqlite3_bind_int64(statement, 2, static_cast<sqlite3_int64>(byte_length));
@@ -958,10 +957,11 @@ support::Result<GcReport> MetadataStore::execute_gc(const std::filesystem::path&
       }
       // Recheck: still zero refs, no active lease
       sqlite3_stmt* chk = nullptr;
-      if (sqlite3_prepare_v2(database_,
-                             "SELECT 1 FROM chunk_catalog WHERE chunk_hash=?1 AND manifest_ref_count=0 AND state='VERIFIED'"
-                             " AND chunk_hash NOT IN (SELECT chunk_hash FROM chunk_leases WHERE expires_at_ms > ?2)",
-                             -1, &chk, nullptr) != SQLITE_OK) {
+      if (sqlite3_prepare_v2(
+              database_,
+              "SELECT 1 FROM chunk_catalog WHERE chunk_hash=?1 AND manifest_ref_count=0 AND state='VERIFIED'"
+              " AND chunk_hash NOT IN (SELECT chunk_hash FROM chunk_leases WHERE expires_at_ms > ?2)",
+              -1, &chk, nullptr) != SQLITE_OK) {
         sqlite3_exec(database_, "ROLLBACK", nullptr, nullptr, nullptr);
         ++report.errors;
         continue;
@@ -1141,8 +1141,7 @@ support::Result<void> install_verified_chunk(const std::filesystem::path& store_
   }
 
   // fsync the directory so the new directory entry is durable
-  if (!fsync_dir(destination.parent_path()))
-    return support::Result<void>::failure(make_resource("m1.store.fsync"));
+  if (!fsync_dir(destination.parent_path())) return support::Result<void>::failure(make_resource("m1.store.fsync"));
 
   return support::Result<void>::success();
 }

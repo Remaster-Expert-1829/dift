@@ -266,8 +266,8 @@ int main() {
 
         std::cout << prof.label << ',' << file.name << ',' << pat.name << ',' << stats.count << ','
                   << static_cast<std::uint64_t>(std::lround(stats.avg_bytes)) << ','
-                  << static_cast<std::uint64_t>(std::lround(stats.stddev_bytes)) << ','
-                  << stats.min_bytes << ',' << stats.max_bytes << ',' << rr << ',' << stats.wall_ms << '\n';
+                  << static_cast<std::uint64_t>(std::lround(stats.stddev_bytes)) << ',' << stats.min_bytes << ','
+                  << stats.max_bytes << ',' << rr << ',' << stats.wall_ms << '\n';
       }
     }
   }

@@ -231,8 +231,7 @@ TEST_CASE("INT-005: GC dry-run lists eligible blobs without removing them") {
   policy.grace_period_ms = 0U;
   policy.require_explicit = false;
   const auto now_ms = static_cast<std::uint64_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count());
   // Dry-run: plan_gc with dry_run=true returns the eligible list without making DB changes
   const auto plan = db.value_if()->plan_gc(policy, true, now_ms);
@@ -269,8 +268,7 @@ TEST_CASE("INT-005: GC removes unreferenced blobs after grace period") {
   policy.grace_period_ms = 0U;
   policy.require_explicit = false;
   const auto now_ms = static_cast<std::uint64_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count());
   const auto plan = db.value_if()->plan_gc(policy, false, now_ms);
   REQUIRE(plan.has_value());

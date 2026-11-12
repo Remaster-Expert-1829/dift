@@ -171,15 +171,14 @@ TEST_CASE("R3: grace period prevents newly recorded blob from being GC eligible"
   policy.grace_period_ms = 60ULL * 60ULL * 1000ULL;  // 1 hour
   policy.require_explicit = false;
   const auto now_ms = static_cast<std::uint64_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count());
   const auto plan = store.value_if()->plan_gc(policy, /*dry_run=*/true, now_ms);
   REQUIRE(plan.has_value());
 
   const auto& eligible = plan.value_if()->eligible;
-  const bool found = std::any_of(eligible.begin(), eligible.end(),
-                                 [&](const GcEntry& e) { return e.hash == *digest.value_if(); });
+  const bool found =
+      std::any_of(eligible.begin(), eligible.end(), [&](const GcEntry& e) { return e.hash == *digest.value_if(); });
   REQUIRE_FALSE(found);
 
   std::filesystem::remove_all(root, error);
