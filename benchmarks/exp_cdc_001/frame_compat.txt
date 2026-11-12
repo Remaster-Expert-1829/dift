@@ -1,0 +1,13 @@
+
+=== EXP-CDC-001 Frame Compatibility Analysis ===
+Wire protocol constraint: one v1 chunk per frame (API-007)
+TBD-LIMITS-001 status: OPEN (max_payload_bytes not yet frozen)
+
+Profile max_bytes vs common frame ceilings:
+  A_4KB:   max=16384 bytes   -- fits in any reasonable frame
+  B_16KB:  max=65536 bytes   -- fits in any reasonable frame
+  C_64KB:  max=262144 bytes  -- fits in >=256KB frame payload
+  D_128KB: max=524288 bytes  -- requires >=512KB frame payload
+
+Recommendation: select C_64KB (rabin-v1) for good dedup/metadata balance.
+Confirm max=262144 <= TBD-LIMITS-001 negotiated ceiling before M2 freeze.

@@ -1,5 +1,27 @@
 # Manifest and Chunk Store
 
+## M1 schema-1 canonical CBOR keys
+
+Schema 1 uses literal lowercase ASCII text keys, not abbreviations. The top-level
+map contains `created_at_unix_ms` (unsigned integer), `files` (array), `profile`
+(map), `schema` (the unsigned integer `1`), and `profile_id` (text). Each file
+map contains `chunks` (array), `path` (UTF-8 NFC normalized relative text),
+`sha256` (32-byte byte string), and `size` (unsigned integer). Each chunk map
+contains `length`, `sha256`, and `offset` with the same unsigned/byte-string
+types. The `profile` map contains `boundary_mask`, `boundary_value`,
+`max_bytes`, `min_bytes`, `polynomial`, `target_bytes`, and `window_bytes`, all
+unsigned integers. Unknown keys, duplicate keys, indefinite items, noncanonical
+integer widths, noncanonical map ordering, invalid UTF-8/NFC paths, and values
+outside local limits are rejected before persistence. RFC 8949 deterministic map
+ordering is required. `EXP-CDC-001` (2026-11-03) selected `rabin-v1` as the M1 production profile
+(polynomial=0x3da3358b4dc173, window=32, min=1024, target=16384, max=65536,
+mask=0x3FFF, value=0). The implementation emits `profile_id: "rabin-v1"` when
+the `rabin_v1_profile()` parameters are used, and `"experimental-parameterized"`
+for any other profile (tests and future experiments). Golden vectors are recorded
+in `benchmarks/exp_cdc_001/golden_vectors.txt` and verified in TEST-PROP-001.
+`max_bytes=65536` must be confirmed ≤ TBD-LIMITS-001 negotiated frame ceiling
+before M2 freeze.
+
 > Status: Approved logical model; initial schema version is `1`.  
 > Decision: ADR-004
 

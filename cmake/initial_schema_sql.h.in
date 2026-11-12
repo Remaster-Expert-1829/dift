@@ -1,0 +1,7 @@
+#pragma once
+
+namespace spoink::offline {
+inline constexpr char kInitialSchemaSql[] = R"spoink_schema(
+@SPOINK_INITIAL_SCHEMA_SQL@
+)spoink_schema";
+}  // namespace spoink::offline
