@@ -3,8 +3,8 @@
 - Task ID: `M1-001`
 - Branch: `feature/m1-001-offline-engine`
 - Status: `READY_FOR_REVIEW`
-- Report date: 2026-11-04 (Iteration 2 repairs: 2026-11-04; Iteration 3 repair: 2026-11-04)
-- Status: `READY_FOR_REVIEW (Iteration 3)`
+- Report date: 2026-11-04 (Iteration 2: 2026-11-04; Iteration 3: 2026-11-04; Closure: 2026-11-12)
+- Status: `APPROVED`
 
 ## Summary
 
@@ -43,6 +43,25 @@ M1-001 implements the complete offline content-defined chunking and durable-stor
 | `scripts/check-dependencies.py` | Extended for M1 dependency lock validation |
 | `docs/05_data/05_01_manifest_and_chunk_store.md` | Updated: EXP-CDC-001 complete, rabin-v1 parameters frozen, TBD-LIMITS-001 open |
 | `docs/06_contracts/06_01_wire_protocol.md` | Updated: rabin-v1 max_bytes constraint against TBD-LIMITS-001 |
+
+---
+
+## Closure (2026-11-12)
+
+**Commit**: `bbae5c6` — `feat(offline): implement M1-001 offline content and durable-store engine`
+**Branch**: `feature/m1-001-offline-engine`
+**Remote**: `https://github.com/Remaster-Expert-1829/dift`
+**Push confirmed**: `733cfaf..bbae5c6` on remote as of 2026-11-12.
+**CI**: https://github.com/Remaster-Expert-1829/dift/actions?query=branch%3Afeature%2Fm1-001-offline-engine
+
+**Files committed** (22 files, 3949 insertions):
+- 15 new M1 source/test/benchmark files
+- 7 modified tracked files (CMakeLists.txt, vcpkg.json, third_party/NOTICE.md, scripts/check-dependencies.py, docs/05_data/05_01_manifest_and_chunk_store.md, docs/06_contracts/06_01_wire_protocol.md, agent/builder/implementation-report.md)
+
+**Excluded from commit** (pre-existing, unchanged by this task):
+- `agent/architecture/current-plan.md` — Architect changes
+- `agent/reviewer/review.md` — Reviewer file
+- `agent/task.md` — Task tracking
 
 ---
 
