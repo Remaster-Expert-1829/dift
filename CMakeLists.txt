@@ -64,8 +64,51 @@ target_include_directories(spoink_offline PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/g
 target_link_libraries(spoink_offline PUBLIC spoink::support OpenSSL::Crypto SQLite::SQLite3 utf8proc::utf8proc)
 set_target_properties(spoink_offline PROPERTIES CXX_EXTENSIONS OFF)
 
+add_library(spoink_protocol
+  src/protocol/framing.cpp
+  src/protocol/codec.cpp
+)
+add_library(spoink::protocol ALIAS spoink_protocol)
+target_include_directories(spoink_protocol PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_link_libraries(spoink_protocol PUBLIC spoink::support)
+set_target_properties(spoink_protocol PROPERTIES CXX_EXTENSIONS OFF)
+
+add_library(spoink_identity
+  src/identity/identity.cpp
+)
+add_library(spoink::identity ALIAS spoink_identity)
+target_include_directories(spoink_identity PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_link_libraries(spoink_identity PUBLIC spoink::support OpenSSL::SSL OpenSSL::Crypto)
+set_target_properties(spoink_identity PROPERTIES CXX_EXTENSIONS OFF)
+
+add_library(spoink_pairing
+  src/pairing/pairing.cpp
+)
+add_library(spoink::pairing ALIAS spoink_pairing)
+target_include_directories(spoink_pairing PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_link_libraries(spoink_pairing PUBLIC spoink::identity spoink::protocol OpenSSL::SSL SQLite::SQLite3)
+set_target_properties(spoink_pairing PROPERTIES CXX_EXTENSIONS OFF)
+
+add_library(spoink_session
+  src/session/state_machine.cpp
+)
+add_library(spoink::session ALIAS spoink_session)
+target_include_directories(spoink_session PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_link_libraries(spoink_session PUBLIC spoink::protocol spoink::support)
+set_target_properties(spoink_session PROPERTIES CXX_EXTENSIONS OFF)
+
+add_library(spoink_transport
+  src/transport/connection.cpp
+)
+add_library(spoink::transport ALIAS spoink_transport)
+target_include_directories(spoink_transport PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+target_link_libraries(spoink_transport PUBLIC spoink::identity spoink::pairing OpenSSL::SSL SQLite::SQLite3)
+set_target_properties(spoink_transport PROPERTIES CXX_EXTENSIONS OFF)
+
 add_executable(spoink src/cli/main.cpp)
-target_link_libraries(spoink PRIVATE spoink::support spoink_project_options)
+target_link_libraries(spoink PRIVATE
+  spoink::identity spoink::pairing spoink::session spoink::transport spoink::offline
+  spoink_project_options)
 set_target_properties(spoink PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_definitions(spoink PRIVATE SPOINK_VERSION="${PROJECT_VERSION}")
 
@@ -100,6 +143,23 @@ if(BUILD_TESTING)
   target_link_libraries(spoink_offline_integration_test PRIVATE spoink::offline Catch2::Catch2WithMain)
   set_target_properties(spoink_offline_integration_test PROPERTIES CXX_EXTENSIONS OFF)
   catch_discover_tests(spoink_offline_integration_test)
+
+  add_executable(spoink_m2_unit_tests
+    tests/unit/identity_test.cpp
+    tests/unit/framing_test.cpp
+    tests/unit/codec_test.cpp
+    tests/unit/state_machine_test.cpp
+  )
+  target_link_libraries(spoink_m2_unit_tests PRIVATE
+    spoink::identity spoink::protocol spoink::session Catch2::Catch2WithMain)
+  set_target_properties(spoink_m2_unit_tests PROPERTIES CXX_EXTENSIONS OFF)
+  catch_discover_tests(spoink_m2_unit_tests)
+
+  add_executable(spoink_m2_integration_test tests/integration/m2_integration_test.cpp)
+  target_link_libraries(spoink_m2_integration_test PRIVATE
+    spoink::pairing spoink::session spoink::transport spoink::offline Catch2::Catch2WithMain)
+  set_target_properties(spoink_m2_integration_test PROPERTIES CXX_EXTENSIONS OFF)
+  catch_discover_tests(spoink_m2_integration_test)
 endif()
 
 # EXP-CDC-001 benchmark and golden-vector generator — built unconditionally
