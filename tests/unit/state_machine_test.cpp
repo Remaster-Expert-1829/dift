@@ -154,7 +154,8 @@ TEST_CASE("SessionStateMachine: unknown message type produces error", "[state_ma
 
   FramePrefix pfx;
   pfx.channel = Channel::kControl;
-  pfx.message_type = static_cast<MessageType>(0xFF);  // unknown
+  pfx.message_type =
+      static_cast<MessageType>(0xFF);  // unknown  // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
   const auto effects = sm.process(MsgIn{pfx, {}, {}});
   REQUIRE(sm.state() == State::kError);
 }
