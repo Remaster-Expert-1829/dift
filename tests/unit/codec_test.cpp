@@ -111,9 +111,9 @@ TEST_CASE("TransferPlan encode/decode round-trip with hashes", "[codec]") {
   msg.plan_part = 0;
   msg.plan_final = true;
 
-  std::array<std::byte, 32> h1;
+  std::array<std::byte, 32> h1{};
   h1.fill(std::byte{0xAA});
-  std::array<std::byte, 32> h2;
+  std::array<std::byte, 32> h2{};
   h2.fill(std::byte{0xBB});
   msg.missing_chunk_hashes.push_back(h1);
   msg.missing_chunk_hashes.push_back(h2);

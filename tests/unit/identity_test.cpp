@@ -88,7 +88,7 @@ TEST_CASE("verify_key_permissions: detects insecure mode", "[identity][sec]") {
   {
     std::FILE* f = std::fopen(tmp.c_str(), "w");
     REQUIRE(f != nullptr);
-    std::fclose(f);
+    (void)std::fclose(f);
   }
   // Set world-readable: mode 0644
   ::chmod(tmp.c_str(), 0644);
