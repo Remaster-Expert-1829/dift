@@ -1,6 +1,6 @@
-#include <catch2/catch_test_macros.hpp>
-
 #include "spoink/protocol/codec.h"
+
+#include <catch2/catch_test_macros.hpp>
 
 using namespace spoink::protocol;
 

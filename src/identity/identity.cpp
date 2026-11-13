@@ -23,13 +23,9 @@ namespace spoink::identity {
 
 namespace {
 
-support::Error make_resource(const char* key) {
-  return support::make_error(support::ErrorCode::kResourceFailure, key);
-}
+support::Error make_resource(const char* key) { return support::make_error(support::ErrorCode::kResourceFailure, key); }
 
-support::Error make_invalid(const char* key) {
-  return support::make_error(support::ErrorCode::kInvalidArgument, key);
-}
+support::Error make_invalid(const char* key) { return support::make_error(support::ErrorCode::kInvalidArgument, key); }
 
 // Static ALPN strings that outlive any SSL_CTX.
 const std::string& alpn_pair_str() {
@@ -42,8 +38,8 @@ const std::string& alpn_normal_str() {
 }
 
 // ALPN selection callback for the server side.
-int alpn_select_cb(ssl_st* /*ssl*/, const unsigned char** out, unsigned char* outlen,
-                   const unsigned char* in, unsigned int inlen, void* arg) {
+int alpn_select_cb(ssl_st* /*ssl*/, const unsigned char** out, unsigned char* outlen, const unsigned char* in,
+                   unsigned int inlen, void* arg) {
   const auto* expected = static_cast<const std::string*>(arg);
   unsigned int pos = 0;
   while (pos < inlen) {
@@ -101,9 +97,8 @@ support::Result<support::X509Ptr> create_self_signed_cert(evp_pkey_st* pkey, std
 
   X509_NAME* name = X509_get_subject_name(cert);
   const std::string dn{display_name};
-  X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_UTF8,
-                              reinterpret_cast<const unsigned char*>(dn.c_str()),
-                              static_cast<int>(dn.size()), -1, 0);
+  X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_UTF8, reinterpret_cast<const unsigned char*>(dn.c_str()),
+                             static_cast<int>(dn.size()), -1, 0);
   X509_set_issuer_name(cert, name);
 
   if (X509_set_pubkey(cert, pkey) <= 0) {
@@ -122,7 +117,7 @@ support::Result<support::EvpPkeyPtr> load_private_key(const std::filesystem::pat
     return support::Result<support::EvpPkeyPtr>::failure(make_resource("m2.identity.key_open"));
   }
   EVP_PKEY* pkey = PEM_read_PrivateKey(fp, nullptr, nullptr, nullptr);
-  std::fclose(fp);
+  (void)std::fclose(fp);
   if (pkey == nullptr) {
     return support::Result<support::EvpPkeyPtr>::failure(make_resource("m2.identity.key_read"));
   }
@@ -139,7 +134,7 @@ support::Result<support::X509Ptr> load_certificate(const std::filesystem::path& 
     return support::Result<support::X509Ptr>::failure(make_resource("m2.identity.cert_open"));
   }
   X509* cert = PEM_read_X509(fp, nullptr, nullptr, nullptr);
-  std::fclose(fp);
+  (void)std::fclose(fp);
   if (cert == nullptr) {
     return support::Result<support::X509Ptr>::failure(make_resource("m2.identity.cert_read"));
   }
@@ -175,7 +170,7 @@ support::Result<void> verify_key_permissions(const std::filesystem::path& key_pa
 }
 
 support::Result<DeviceIdentity> load_or_create_identity(const std::filesystem::path& state_root,
-                                                         std::string_view display_name) {
+                                                        std::string_view display_name) {
   const auto identity_dir = state_root / "identity";
   const auto key_path = identity_dir / "device.key";
   const auto cert_path = identity_dir / "device.crt";
@@ -210,7 +205,7 @@ support::Result<DeviceIdentity> load_or_create_identity(const std::filesystem::p
         return support::Result<DeviceIdentity>::failure(make_resource("m2.identity.key_fdopen"));
       }
       const int rc = PEM_write_PrivateKey(fp, pkey.get(), nullptr, nullptr, 0, nullptr, nullptr);
-      std::fclose(fp);
+      (void)std::fclose(fp);
       if (rc <= 0) return support::Result<DeviceIdentity>::failure(make_resource("m2.identity.key_write"));
     }
 
@@ -218,7 +213,7 @@ support::Result<DeviceIdentity> load_or_create_identity(const std::filesystem::p
       FILE* fp = std::fopen(cert_path.c_str(), "w");
       if (fp == nullptr) return support::Result<DeviceIdentity>::failure(make_resource("m2.identity.cert_create"));
       const int rc = PEM_write_X509(fp, cert.get());
-      std::fclose(fp);
+      (void)std::fclose(fp);
       if (rc <= 0) return support::Result<DeviceIdentity>::failure(make_resource("m2.identity.cert_write"));
     }
   } else {
@@ -246,13 +241,12 @@ support::Result<DeviceIdentity> load_or_create_identity(const std::filesystem::p
     }
   }
 
-  return support::Result<DeviceIdentity>::success(DeviceIdentity{std::move(pkey), std::move(cert),
-                                                                   std::move(*peer_id_result.value_if()),
-                                                                   std::move(loaded_name)});
+  return support::Result<DeviceIdentity>::success(
+      DeviceIdentity{std::move(pkey), std::move(cert), *peer_id_result.value_if(), std::move(loaded_name)});
 }
 
 support::Result<support::SslCtxPtr> DeviceIdentity::make_tls_context(std::string_view alpn,
-                                                                      bool require_peer_cert) const {
+                                                                     bool require_peer_cert) const {
   // Map alpn to static storage so the callback pointer remains valid.
   const std::string* alpn_ptr = nullptr;
   if (alpn == alpn_pair_str()) {
@@ -289,8 +283,7 @@ support::Result<support::SslCtxPtr> DeviceIdentity::make_tls_context(std::string
     return support::Result<support::SslCtxPtr>::failure(make_resource("m2.identity.check_key"));
   }
 
-  const int verify_flags =
-      require_peer_cert ? (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT) : SSL_VERIFY_PEER;
+  const int verify_flags = require_peer_cert ? (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT) : SSL_VERIFY_PEER;
   SSL_CTX_set_verify(ctx, verify_flags, permissive_verify_cb);
 
   // Client side: advertise ALPN.
@@ -302,8 +295,8 @@ support::Result<support::SslCtxPtr> DeviceIdentity::make_tls_context(std::string
   }
   // Server side: select ALPN. alpn_ptr points to a static; safe as callback arg.
   SSL_CTX_set_alpn_select_cb(ctx, alpn_select_cb,
-                              // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
-                              const_cast<void*>(static_cast<const void*>(alpn_ptr)));
+                             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                             const_cast<void*>(static_cast<const void*>(alpn_ptr)));
 
   return support::Result<support::SslCtxPtr>::success(std::move(ctx_ptr));
 }

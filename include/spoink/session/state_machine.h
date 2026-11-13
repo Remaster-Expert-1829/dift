@@ -16,9 +16,9 @@ namespace spoink::session {
 
 // ── Roles and states ─────────────────────────────────────────────────────────
 
-enum class Role { kSender, kReceiver };
+enum class Role : std::uint8_t { kSender, kReceiver };
 
-enum class State {
+enum class State : std::uint8_t {
   kConnecting,         // Before HELLO sent
   kHelloSent,          // HELLO sent, waiting for peer HELLO
   kReady,              // HELLO exchanged; no active session
@@ -43,8 +43,12 @@ struct MsgIn {
   std::vector<std::byte> payload;
 };
 
-struct ConnClosed { std::string reason; };
-struct TimerFired { std::uint32_t timer_id; };
+struct ConnClosed {
+  std::string reason;
+};
+struct TimerFired {
+  std::uint32_t timer_id;
+};
 
 // Caller signals: start a new sender session.
 struct StartSender {
@@ -54,10 +58,14 @@ struct StartSender {
 };
 
 // Caller signals: accept the pending offer (receiver side).
-struct LocalAccept { protocol::SessionAcceptMsg accept; };
+struct LocalAccept {
+  protocol::SessionAcceptMsg accept;
+};
 
 // Caller signals: reject the pending offer (receiver side).
-struct LocalReject { std::string reason; };
+struct LocalReject {
+  std::string reason;
+};
 
 // Caller signals: chunk blob committed to store + DB (receiver side).
 // The state machine then emits EffSendFrame(CHUNK_ACK).
@@ -91,10 +99,8 @@ struct SendSessionResult {
   std::uint32_t files_failed{0};
 };
 
-using Input = std::variant<MsgIn, ConnClosed, TimerFired,
-                           StartSender, LocalAccept, LocalReject,
-                           ChunkStored, ChunkStoreFailed,
-                           SendFileResult, SendSessionResult>;
+using Input = std::variant<MsgIn, ConnClosed, TimerFired, StartSender, LocalAccept, LocalReject, ChunkStored,
+                           ChunkStoreFailed, SendFileResult, SendSessionResult>;
 
 // ── Effects ──────────────────────────────────────────────────────────────────
 
@@ -104,28 +110,66 @@ struct EffSendFrame {
   std::vector<std::byte> payload;
 };
 
-struct EffCloseConn { std::string reason; };
-struct EffSetTimer { std::uint32_t timer_id; std::uint32_t ms; };
-struct EffCancelTimer { std::uint32_t timer_id; };
+struct EffCloseConn {
+  std::string reason;
+};
+struct EffSetTimer {
+  std::uint32_t timer_id;
+  std::uint32_t ms;
+};
+struct EffCancelTimer {
+  std::uint32_t timer_id;
+};
 
 // Notify the application layer of session-level events.
-struct EffOfferReceived  { protocol::SessionOfferMsg offer; };
-struct EffAccepted       { protocol::SessionAcceptMsg accept; };
-struct EffRejected       { std::string reason; };
-struct EffPlanReceived   { protocol::TransferPlanMsg plan; };
-struct EffChunkAck       { std::array<std::byte, 32> chunk_hash; std::string status; };
-struct EffChunkNack      { std::array<std::byte, 32> chunk_hash; std::string error_code; bool retryable; };
-struct EffFileResult     { std::uint32_t file_id; std::string state; std::string error_code; };
-struct EffSessionResult  { std::array<std::byte, 16> transfer_id; std::string state; };
-struct EffManifestData   { std::array<std::byte, 16> transfer_id; std::vector<std::byte> part; };
+struct EffOfferReceived {
+  protocol::SessionOfferMsg offer;
+};
+struct EffAccepted {
+  protocol::SessionAcceptMsg accept;
+};
+struct EffRejected {
+  std::string reason;
+};
+struct EffPlanReceived {
+  protocol::TransferPlanMsg plan;
+};
+struct EffChunkAck {
+  std::array<std::byte, 32> chunk_hash;
+  std::string status;
+};
+struct EffChunkNack {
+  std::array<std::byte, 32> chunk_hash;
+  std::string error_code;
+  bool retryable;
+};
+struct EffFileResult {
+  std::uint32_t file_id;
+  std::string state;
+  std::string error_code;
+};
+struct EffSessionResult {
+  std::array<std::byte, 16> transfer_id;
+  std::string state;
+};
+struct EffManifestData {
+  std::array<std::byte, 16> transfer_id;
+  std::vector<std::byte> part;
+};
 // Receiver: a complete chunk has arrived; caller must commit to store then call ChunkStored/ChunkStoreFailed.
-struct EffChunkReceived  { std::array<std::byte, 16> transfer_id; std::array<std::byte, 32> chunk_hash;
-                           std::vector<std::byte> payload; std::string codec; std::uint64_t plaintext_length; };
-struct EffProtocolError  { std::string code; };
+struct EffChunkReceived {
+  std::array<std::byte, 16> transfer_id;
+  std::array<std::byte, 32> chunk_hash;
+  std::vector<std::byte> payload;
+  std::string codec;
+  std::uint64_t plaintext_length;
+};
+struct EffProtocolError {
+  std::string code;
+};
 
-using Effect = std::variant<EffSendFrame, EffCloseConn, EffSetTimer, EffCancelTimer,
-                            EffOfferReceived, EffAccepted, EffRejected, EffPlanReceived,
-                            EffChunkAck, EffChunkNack, EffFileResult, EffSessionResult,
+using Effect = std::variant<EffSendFrame, EffCloseConn, EffSetTimer, EffCancelTimer, EffOfferReceived, EffAccepted,
+                            EffRejected, EffPlanReceived, EffChunkAck, EffChunkNack, EffFileResult, EffSessionResult,
                             EffManifestData, EffChunkReceived, EffProtocolError>;
 
 // ── State machine ─────────────────────────────────────────────────────────────
@@ -137,8 +181,7 @@ using Effect = std::variant<EffSendFrame, EffCloseConn, EffSetTimer, EffCancelTi
 class SessionStateMachine {
  public:
   // Create machine. `start()` must be called once before any `process()` call.
-  explicit SessionStateMachine(Role role, support::PeerId local_peer_id,
-                               std::uint64_t instance_nonce);
+  explicit SessionStateMachine(Role role, support::PeerId local_peer_id, std::uint64_t instance_nonce);
 
   [[nodiscard]] State state() const noexcept { return state_; }
   [[nodiscard]] Role role() const noexcept { return role_; }
@@ -157,8 +200,7 @@ class SessionStateMachine {
   std::vector<Effect> handle_session_accept(const protocol::SessionAcceptMsg& msg);
   std::vector<Effect> handle_session_reject(const protocol::SessionRejectMsg& msg);
   std::vector<Effect> handle_manifest_begin(const protocol::ManifestBeginMsg& msg);
-  std::vector<Effect> handle_manifest_part(const protocol::ManifestPartMsg& msg,
-                                           std::vector<std::byte> payload);
+  std::vector<Effect> handle_manifest_part(const protocol::ManifestPartMsg& msg, std::vector<std::byte> payload);
   std::vector<Effect> handle_manifest_end(const protocol::ManifestEndMsg& msg);
   std::vector<Effect> handle_transfer_plan(const protocol::TransferPlanMsg& msg);
   std::vector<Effect> handle_chunk_put(const protocol::ChunkPutMsg& msg,
@@ -179,8 +221,7 @@ class SessionStateMachine {
   std::vector<Effect> handle_send_session_result(const SendSessionResult& cmd);
 
   std::vector<Effect> protocol_error(const char* code);
-  EffSendFrame make_send(protocol::Channel ch, protocol::MessageType mt,
-                         std::vector<std::byte> header,
+  EffSendFrame make_send(protocol::Channel ch, protocol::MessageType mt, std::vector<std::byte> header,
                          std::vector<std::byte> payload = {});
 
   Role role_;

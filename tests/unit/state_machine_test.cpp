@@ -1,11 +1,11 @@
-#include <catch2/catch_test_macros.hpp>
+#include "spoink/session/state_machine.h"
 
 #include <array>
+#include <catch2/catch_test_macros.hpp>
 #include <variant>
 
 #include "spoink/protocol/codec.h"
 #include "spoink/protocol/framing.h"
-#include "spoink/session/state_machine.h"
 #include "spoink/support/types.h"
 
 using namespace spoink::session;

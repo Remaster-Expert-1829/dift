@@ -19,7 +19,7 @@ namespace spoink::transport {
 
 // Options for the normal (non-pairing) TLS listener.
 struct ListenOptions {
-  std::uint16_t port{0};          // 0 → OS-assigned
+  std::uint16_t port{0};  // 0 → OS-assigned
   std::uint32_t handshake_timeout_ms{10000};
   std::uint32_t idle_timeout_ms{60000};
 };
@@ -47,10 +47,9 @@ class TlsConnection {
   [[nodiscard]] const support::PeerId& peer_id() const noexcept { return peer_id_; }
 
   // Send a complete frame. Blocks until all bytes are written.
-  [[nodiscard]] support::Result<void> send_frame(
-      const protocol::FramePrefix& prefix,
-      const std::vector<std::byte>& header,
-      const std::vector<std::byte>& payload);
+  [[nodiscard]] support::Result<void> send_frame(const protocol::FramePrefix& prefix,
+                                                 const std::vector<std::byte>& header,
+                                                 const std::vector<std::byte>& payload);
 
   // Read one complete frame. Blocks until a full frame arrives.
   // Returns the prefix; header and payload are appended to the out-params.
@@ -59,17 +58,12 @@ class TlsConnection {
   void close();
 
  private:
-  friend support::Result<TlsConnection> tls_connect(
-      const identity::DeviceIdentity& identity,
-      const ConnectOptions& opts,
-      sqlite3* db);
-  friend support::Result<TlsConnection> tls_accept_one(
-      const identity::DeviceIdentity& identity,
-      const ListenOptions& opts,
-      sqlite3* db);
+  friend support::Result<TlsConnection> tls_connect(const identity::DeviceIdentity& identity,
+                                                    const ConnectOptions& opts, sqlite3* db);
+  friend support::Result<TlsConnection> tls_accept_one(const identity::DeviceIdentity& identity,
+                                                       const ListenOptions& opts, sqlite3* db);
 
-  TlsConnection(ssl_st* ssl, int fd, support::PeerId peer_id)
-      : ssl_(ssl), fd_(fd), peer_id_(std::move(peer_id)) {}
+  TlsConnection(ssl_st* ssl, int fd, support::PeerId peer_id) : ssl_(ssl), fd_(fd), peer_id_(std::move(peer_id)) {}
 
   ssl_st* ssl_{nullptr};
   int fd_{-1};
@@ -77,24 +71,18 @@ class TlsConnection {
 };
 
 // Connect to a spoink/1 server, verify its SPKI pin, return the connection.
-[[nodiscard]] support::Result<TlsConnection>
-tls_connect(const identity::DeviceIdentity& identity,
-            const ConnectOptions& opts,
-            sqlite3* db);
+[[nodiscard]] support::Result<TlsConnection> tls_connect(const identity::DeviceIdentity& identity,
+                                                         const ConnectOptions& opts, sqlite3* db);
 
 // Accept one spoink/1 connection (blocks), verify SPKI pin, return the connection.
-[[nodiscard]] support::Result<TlsConnection>
-tls_accept_one(const identity::DeviceIdentity& identity,
-               const ListenOptions& opts,
-               sqlite3* db);
+[[nodiscard]] support::Result<TlsConnection> tls_accept_one(const identity::DeviceIdentity& identity,
+                                                            const ListenOptions& opts, sqlite3* db);
 
 // Verify peer SPKI matches the pinned value from the trust store.
 // Constant-time comparison to prevent timing side-channel.
-[[nodiscard]] support::Result<void>
-verify_spki_pin(ssl_st* ssl, const std::vector<std::byte>& expected_spki_der);
+[[nodiscard]] support::Result<void> verify_spki_pin(ssl_st* ssl, const std::vector<std::byte>& expected_spki_der);
 
 // Retrieve the actual listening port after bind (for OS-assigned ports).
-[[nodiscard]] support::Result<std::uint16_t>
-get_bound_port(int server_fd);
+[[nodiscard]] support::Result<std::uint16_t> get_bound_port(int server_fd);
 
 }  // namespace spoink::transport

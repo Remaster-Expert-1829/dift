@@ -7,6 +7,7 @@
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
+#include <sqlite3.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -15,7 +16,6 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
-#include <sqlite3.h>
 #include <string>
 #include <vector>
 
@@ -27,25 +27,18 @@ namespace spoink::pairing {
 
 namespace {
 
-support::Error make_net(const char* key) {
-  return support::make_error(support::ErrorCode::kResourceFailure, key);
-}
-support::Error make_proto(const char* key) {
-  return support::make_error(support::ErrorCode::kInvalidArgument, key);
-}
-support::Error make_db(const char* key) {
-  return support::make_error(support::ErrorCode::kResourceFailure, key);
-}
+support::Error make_net(const char* key) { return support::make_error(support::ErrorCode::kResourceFailure, key); }
+support::Error make_proto(const char* key) { return support::make_error(support::ErrorCode::kInvalidArgument, key); }
+support::Error make_db(const char* key) { return support::make_error(support::ErrorCode::kResourceFailure, key); }
 
 // ── SAS derivation ────────────────────────────────────────────────────────────
 
 // Writes one frame to a TLS session. Returns false on write error.
-bool ssl_write_frame(ssl_st* ssl, const protocol::FramePrefix& pfx,
-                     const std::vector<std::byte>& header,
+bool ssl_write_frame(ssl_st* ssl, const protocol::FramePrefix& pfx, const std::vector<std::byte>& header,
                      const std::vector<std::byte>& payload) {
   const auto wire_prefix = protocol::encode_prefix(pfx);
-  if (SSL_write(ssl, wire_prefix.data(),
-                static_cast<int>(protocol::kFramePrefixBytes)) != static_cast<int>(protocol::kFramePrefixBytes)) {
+  if (SSL_write(ssl, wire_prefix.data(), static_cast<int>(protocol::kFramePrefixBytes)) !=
+      static_cast<int>(protocol::kFramePrefixBytes)) {
     return false;
   }
   if (!header.empty()) {
@@ -75,24 +68,20 @@ bool ssl_read_exact(ssl_st* ssl, void* buf, int n) {
 }
 
 // Reads one complete frame. Validates limits before allocating.
-support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>
-ssl_read_frame(ssl_st* ssl) {
+support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>> ssl_read_frame(ssl_st* ssl) {
   std::array<std::byte, protocol::kFramePrefixBytes> raw_prefix{};
-  if (!ssl_read_exact(ssl, raw_prefix.data(),
-                      static_cast<int>(protocol::kFramePrefixBytes))) {
+  if (!ssl_read_exact(ssl, raw_prefix.data(), static_cast<int>(protocol::kFramePrefixBytes))) {
     return support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>::failure(
         make_net("m2.pair.read_prefix"));
   }
   auto pfx_r = protocol::decode_prefix(raw_prefix);
   if (!pfx_r.has_value()) {
-    return support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>::failure(
-        pfx_r.error());
+    return support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>::failure(pfx_r.error());
   }
   const auto& pfx = *pfx_r.value_if();
   auto len_r = protocol::validate_prefix_lengths(pfx);
   if (!len_r.has_value()) {
-    return support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>::failure(
-        len_r.error());
+    return support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>::failure(len_r.error());
   }
 
   const std::size_t total = pfx.header_length + static_cast<std::size_t>(pfx.payload_length);
@@ -149,7 +138,7 @@ support::Result<protocol::PairHelloMsg> recv_pair_hello(ssl_st* ssl) {
     return support::Result<protocol::PairHelloMsg>::failure(make_proto("m2.pair.expected_hello"));
   }
   const std::vector<std::byte> header_bytes(body.begin(),
-                                             body.begin() + static_cast<std::ptrdiff_t>(pfx.header_length));
+                                            body.begin() + static_cast<std::ptrdiff_t>(pfx.header_length));
   return protocol::decode_pair_hello(header_bytes);
 }
 
@@ -162,7 +151,7 @@ support::Result<protocol::PairConfirmMsg> recv_pair_confirm(ssl_st* ssl) {
     return support::Result<protocol::PairConfirmMsg>::failure(make_proto("m2.pair.expected_confirm"));
   }
   const std::vector<std::byte> header_bytes(body.begin(),
-                                             body.begin() + static_cast<std::ptrdiff_t>(pfx.header_length));
+                                            body.begin() + static_cast<std::ptrdiff_t>(pfx.header_length));
   return protocol::decode_pair_confirm(header_bytes);
 }
 
@@ -175,16 +164,16 @@ support::Result<protocol::PairResultMsg> recv_pair_result(ssl_st* ssl) {
     return support::Result<protocol::PairResultMsg>::failure(make_proto("m2.pair.expected_result"));
   }
   const std::vector<std::byte> header_bytes(body.begin(),
-                                             body.begin() + static_cast<std::ptrdiff_t>(pfx.header_length));
+                                            body.begin() + static_cast<std::ptrdiff_t>(pfx.header_length));
   return protocol::decode_pair_result(header_bytes);
 }
 
 // Derives SAS context bytes: min(a,b) || max(a,b) || min(n1,n2) || max(n1,n2).
-std::vector<unsigned char> make_exporter_context(
-    const std::array<std::byte, 32>& id_local,
-    const std::array<std::byte, 32>& id_remote,
-    const std::array<std::byte, 32>& nonce_local,
-    const std::array<std::byte, 32>& nonce_remote) {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+std::vector<unsigned char> make_exporter_context(const std::array<std::byte, 32>& id_local,
+                                                 const std::array<std::byte, 32>& id_remote,
+                                                 const std::array<std::byte, 32>& nonce_local,
+                                                 const std::array<std::byte, 32>& nonce_remote) {
   const bool id_local_smaller = (id_local < id_remote);
   const auto& id_min = id_local_smaller ? id_local : id_remote;
   const auto& id_max = id_local_smaller ? id_remote : id_local;
@@ -203,8 +192,7 @@ std::vector<unsigned char> make_exporter_context(
 }
 
 // Extracts the peer's SPKI DER and certificate DER from an established SSL.
-support::Result<std::pair<std::vector<std::byte>, std::vector<std::byte>>>
-extract_peer_cert_info(ssl_st* ssl) {
+support::Result<std::pair<std::vector<std::byte>, std::vector<std::byte>>> extract_peer_cert_info(ssl_st* ssl) {
   X509* cert = SSL_get_peer_certificate(ssl);
   if (cert == nullptr) {
     return support::Result<std::pair<std::vector<std::byte>, std::vector<std::byte>>>::failure(
@@ -241,6 +229,7 @@ extract_peer_cert_info(ssl_st* ssl) {
 }
 
 // Sets SO_RCVTIMEO / SO_SNDTIMEO on a socket.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void set_socket_timeout(int fd, std::uint32_t timeout_ms) {
   struct timeval tv {};
   tv.tv_sec = static_cast<time_t>(timeout_ms / 1000U);
@@ -251,11 +240,8 @@ void set_socket_timeout(int fd, std::uint32_t timeout_ms) {
 
 // Core pairing exchange over an established TLS session (after SSL_accept or SSL_connect).
 // is_listener: true for the listening side (sends PAIR_HELLO first).
-support::Result<PairedPeer>
-run_pairing_exchange(ssl_st* ssl,
-                     const identity::DeviceIdentity& identity,
-                     bool is_listener,
-                     const SasConfirmFn& confirm_fn) {
+support::Result<PairedPeer> run_pairing_exchange(ssl_st* ssl, const identity::DeviceIdentity& identity,
+                                                 bool is_listener, const SasConfirmFn& confirm_fn) {
   // Generate a 32-byte attempt nonce.
   std::array<std::byte, 32> local_nonce{};
   if (RAND_bytes(reinterpret_cast<unsigned char*>(local_nonce.data()), 32) != 1) {
@@ -286,13 +272,11 @@ run_pairing_exchange(ssl_st* ssl,
   }
 
   // Derive SAS via TLS exporter.
-  const auto ctx = make_exporter_context(local_hello.peer_id, remote_hello.peer_id,
-                                          local_nonce, remote_hello.attempt_nonce);
+  const auto ctx =
+      make_exporter_context(local_hello.peer_id, remote_hello.peer_id, local_nonce, remote_hello.attempt_nonce);
   std::array<std::byte, 32> export_material{};
-  if (SSL_export_keying_material(
-          ssl, reinterpret_cast<unsigned char*>(export_material.data()), 32,
-          "EXPORTER-Spoink-Pairing-v1", 26,
-          ctx.data(), ctx.size(), 1) != 1) {
+  if (SSL_export_keying_material(ssl, reinterpret_cast<unsigned char*>(export_material.data()), 32,
+                                 "EXPORTER-Spoink-Pairing-v1", 26, ctx.data(), ctx.size(), 1) != 1) {
     return support::Result<PairedPeer>::failure(make_net("m2.pair.exporter"));
   }
 
@@ -356,8 +340,8 @@ run_pairing_exchange(ssl_st* ssl,
   std::array<std::byte, 32> pid_bytes{};
   std::copy(remote_hello.peer_id.begin(), remote_hello.peer_id.end(), pid_bytes.begin());
 
-  PairedPeer peer{support::PeerId{pid_bytes}, std::move(remote_hello.display_name),
-                  std::move(spki_der), std::move(cert_der)};
+  PairedPeer peer{support::PeerId{pid_bytes}, std::move(remote_hello.display_name), std::move(spki_der),
+                  std::move(cert_der)};
 
   return support::Result<PairedPeer>::success(std::move(peer));
 }
@@ -369,17 +353,15 @@ run_pairing_exchange(ssl_st* ssl,
 Sas derive_sas(const std::array<std::byte, 32>& export_material) {
   // 20 bits: byte[0] = AA (8 bits), upper 12 bits of bytes[1..2] = BBB.
   const unsigned aa = static_cast<unsigned>(export_material[0]);
-  const unsigned bbb = (static_cast<unsigned>(export_material[1]) << 4U) |
-                       (static_cast<unsigned>(export_material[2]) >> 4U);
+  const unsigned bbb =
+      (static_cast<unsigned>(export_material[1]) << 4U) | (static_cast<unsigned>(export_material[2]) >> 4U);
   Sas sas{};
-  std::snprintf(sas.text, sizeof(sas.text), "%02X-%03X", aa, bbb);
+  (void)std::snprintf(sas.text, sizeof(sas.text), "%02X-%03X", aa, bbb);
   return sas;
 }
 
-support::Result<PairedPeer>
-pair_listen(const identity::DeviceIdentity& identity,
-            const PairListenOptions& opts,
-            const SasConfirmFn& confirm_fn) {
+support::Result<PairedPeer> pair_listen(const identity::DeviceIdentity& identity, const PairListenOptions& opts,
+                                        const SasConfirmFn& confirm_fn) {
   // Create TLS context for pairing (listener side).
   auto ctx_r = identity.make_tls_context("spoink-pair/1", false);
   if (!ctx_r.has_value()) return support::Result<PairedPeer>::failure(ctx_r.error());
@@ -438,10 +420,8 @@ pair_listen(const identity::DeviceIdentity& identity,
   return result;
 }
 
-support::Result<PairedPeer>
-pair_connect(const identity::DeviceIdentity& identity,
-             const PairConnectOptions& opts,
-             const SasConfirmFn& confirm_fn) {
+support::Result<PairedPeer> pair_connect(const identity::DeviceIdentity& identity, const PairConnectOptions& opts,
+                                         const SasConfirmFn& confirm_fn) {
   // Create TLS context for pairing (initiator side).
   auto ctx_r = identity.make_tls_context("spoink-pair/1", false);
   if (!ctx_r.has_value()) return support::Result<PairedPeer>::failure(ctx_r.error());
@@ -496,11 +476,9 @@ pair_connect(const identity::DeviceIdentity& identity,
 
 // ── DB operations ─────────────────────────────────────────────────────────────
 
-support::Result<void>
-save_trusted_peer(sqlite3* db, const PairedPeer& peer) {
+support::Result<void> save_trusted_peer(sqlite3* db, const PairedPeer& peer) {
   const auto now_ms = static_cast<sqlite3_int64>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count());
 
   const char* sql = R"(
@@ -536,11 +514,9 @@ save_trusted_peer(sqlite3* db, const PairedPeer& peer) {
   return support::Result<void>::success();
 }
 
-support::Result<void>
-revoke_peer(sqlite3* db, const support::PeerId& peer_id) {
+support::Result<void> revoke_peer(sqlite3* db, const support::PeerId& peer_id) {
   const auto now_ms = static_cast<sqlite3_int64>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count());
 
   const char* sql = "UPDATE trusted_peers SET revoked_at_ms = ? WHERE peer_id = ?";
@@ -559,10 +535,8 @@ revoke_peer(sqlite3* db, const support::PeerId& peer_id) {
   return support::Result<void>::success();
 }
 
-support::Result<bool>
-is_trusted_peer(sqlite3* db, const support::PeerId& peer_id) {
-  const char* sql =
-      "SELECT 1 FROM trusted_peers WHERE peer_id = ? AND revoked_at_ms IS NULL LIMIT 1";
+support::Result<bool> is_trusted_peer(sqlite3* db, const support::PeerId& peer_id) {
+  const char* sql = "SELECT 1 FROM trusted_peers WHERE peer_id = ? AND revoked_at_ms IS NULL LIMIT 1";
   sqlite3_stmt* stmt = nullptr;
   if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
     return support::Result<bool>::failure(make_db("m2.pair.db_prepare_check"));
@@ -576,8 +550,7 @@ is_trusted_peer(sqlite3* db, const support::PeerId& peer_id) {
   return support::Result<bool>::failure(make_db("m2.pair.db_check"));
 }
 
-support::Result<std::string>
-get_peer_display_name(sqlite3* db, const support::PeerId& peer_id) {
+support::Result<std::string> get_peer_display_name(sqlite3* db, const support::PeerId& peer_id) {
   const char* sql = "SELECT display_name FROM trusted_peers WHERE peer_id = ? AND revoked_at_ms IS NULL LIMIT 1";
   sqlite3_stmt* stmt = nullptr;
   if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -596,8 +569,7 @@ get_peer_display_name(sqlite3* db, const support::PeerId& peer_id) {
   return support::Result<std::string>::success(std::move(result));
 }
 
-support::Result<std::vector<std::byte>>
-get_peer_spki_der(sqlite3* db, const support::PeerId& peer_id) {
+support::Result<std::vector<std::byte>> get_peer_spki_der(sqlite3* db, const support::PeerId& peer_id) {
   const char* sql = "SELECT spki_der FROM trusted_peers WHERE peer_id = ? AND revoked_at_ms IS NULL LIMIT 1";
   sqlite3_stmt* stmt = nullptr;
   if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {

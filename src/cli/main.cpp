@@ -45,9 +45,7 @@ std::filesystem::path default_state_root() {
   return std::filesystem::current_path() / ".spoink";
 }
 
-std::filesystem::path store_root(const std::filesystem::path& state_root) {
-  return state_root / "store";
-}
+std::filesystem::path store_root(const std::filesystem::path& state_root) { return state_root / "store"; }
 
 // ── Peers DB helpers ──────────────────────────────────────────────────────────
 
@@ -69,8 +67,7 @@ sqlite3* open_peers_db(const std::filesystem::path& state_root) {
 
   const auto db_path = state_root / "peers.sqlite3";
   sqlite3* db = nullptr;
-  if (sqlite3_open_v2(db_path.c_str(), &db,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
+  if (sqlite3_open_v2(db_path.c_str(), &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
                       nullptr) != SQLITE_OK) {
     std::cerr << "error: cannot open peers DB: " << db_path << '\n';
     return nullptr;
@@ -89,12 +86,12 @@ sqlite3* open_peers_db(const std::filesystem::path& state_root) {
 // ── Hex helpers ───────────────────────────────────────────────────────────────
 
 std::string to_hex(const std::array<std::byte, 32>& bytes) {
-  static constexpr const char* kHex = "0123456789abcdef";
+  static constexpr const char* hex_table = "0123456789abcdef";
   std::string out;
   out.reserve(64);
   for (auto b : bytes) {
-    out += kHex[(static_cast<unsigned>(b) >> 4U) & 0xFU];
-    out += kHex[static_cast<unsigned>(b) & 0xFU];
+    out += hex_table[(static_cast<unsigned>(b) >> 4U) & 0xFU];
+    out += hex_table[static_cast<unsigned>(b) & 0xFU];
   }
   return out;
 }
@@ -103,26 +100,22 @@ std::string to_hex(const std::array<std::byte, 32>& bytes) {
 
 std::uint64_t now_ms() {
   return static_cast<std::uint64_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count());
 }
 
 // ── Session I/O helpers ───────────────────────────────────────────────────────
 
 // Split read_frame body into header + payload using the prefix lengths.
-void split_body(const spoink::protocol::FramePrefix& pfx,
-                std::vector<std::byte>& body,
-                std::vector<std::byte>& header_out,
-                std::vector<std::byte>& payload_out) {
+void split_body(const spoink::protocol::FramePrefix& pfx, std::vector<std::byte>& body,
+                std::vector<std::byte>& header_out, std::vector<std::byte>& payload_out) {
   const auto hlen = static_cast<std::size_t>(pfx.header_length);
   header_out.assign(body.begin(), body.begin() + static_cast<std::ptrdiff_t>(hlen));
   payload_out.assign(body.begin() + static_cast<std::ptrdiff_t>(hlen), body.end());
 }
 
 // Send all EffSendFrame effects. Returns false on first send error or EffCloseConn.
-bool flush_send_frames(const std::vector<spoink::session::Effect>& effects,
-                       spoink::transport::TlsConnection& conn) {
+bool flush_send_frames(const std::vector<spoink::session::Effect>& effects, spoink::transport::TlsConnection& conn) {
   for (const auto& eff : effects) {
     if (const auto* e = std::get_if<spoink::session::EffSendFrame>(&eff)) {
       if (!conn.send_frame(e->prefix, e->header, e->payload).has_value()) {
@@ -142,8 +135,7 @@ bool flush_send_frames(const std::vector<spoink::session::Effect>& effects,
 
 // ── HELLO handshake (both roles) ──────────────────────────────────────────────
 // Returns true iff both HELLOs exchanged and SM is in kReady.
-bool do_hello_handshake(spoink::session::SessionStateMachine& sm,
-                        spoink::transport::TlsConnection& conn) {
+bool do_hello_handshake(spoink::session::SessionStateMachine& sm, spoink::transport::TlsConnection& conn) {
   auto start_effects = sm.start();
   if (!flush_send_frames(start_effects, conn)) return false;
 
@@ -166,15 +158,10 @@ bool do_hello_handshake(spoink::session::SessionStateMachine& sm,
 
 // ── Sender session ────────────────────────────────────────────────────────────
 
-int run_sender_session(
-    spoink::transport::TlsConnection& conn,
-    const spoink::identity::DeviceIdentity& identity,
-    const std::filesystem::path& srk,
-    const spoink::offline::CanonicalManifest& manifest) {
-
+int run_sender_session(spoink::transport::TlsConnection& conn, const spoink::identity::DeviceIdentity& identity,
+                       const std::filesystem::path& srk, const spoink::offline::CanonicalManifest& manifest) {
   const std::uint64_t nonce = now_ms();
-  spoink::session::SessionStateMachine sm(
-      spoink::session::Role::kSender, identity.peer_id(), nonce);
+  spoink::session::SessionStateMachine sm(spoink::session::Role::kSender, identity.peer_id(), nonce);
 
   if (!do_hello_handshake(sm, conn)) {
     std::cerr << "error: HELLO handshake failed\n";
@@ -294,16 +281,11 @@ int run_sender_session(
 
 // ── Receiver session ──────────────────────────────────────────────────────────
 
-int run_receiver_session(
-    spoink::transport::TlsConnection& conn,
-    const spoink::identity::DeviceIdentity& identity,
-    spoink::offline::MetadataStore& meta,
-    const std::filesystem::path& srk,
-    const std::filesystem::path& output_dir) {
-
+int run_receiver_session(spoink::transport::TlsConnection& conn, const spoink::identity::DeviceIdentity& identity,
+                         spoink::offline::MetadataStore& meta, const std::filesystem::path& srk,
+                         const std::filesystem::path& output_dir) {
   const std::uint64_t nonce = now_ms();
-  spoink::session::SessionStateMachine sm(
-      spoink::session::Role::kReceiver, identity.peer_id(), nonce);
+  spoink::session::SessionStateMachine sm(spoink::session::Role::kReceiver, identity.peer_id(), nonce);
 
   if (!do_hello_handshake(sm, conn)) {
     std::cerr << "error: HELLO handshake failed\n";
@@ -575,8 +557,7 @@ int cmd_pair(int argc, char* argv[]) {
   sqlite3* db = open_peers_db(state_root);
   if (db == nullptr) return 1;
 
-  auto confirm_fn = [](const spoink::pairing::Sas& sas,
-                       const std::string& peer_name) -> bool {
+  auto confirm_fn = [](const spoink::pairing::Sas& sas, const std::string& peer_name) -> bool {
     std::cerr << "pairing with: " << peer_name << '\n';
     std::cerr << "SAS code:     " << sas.text << '\n';
     std::cerr << "confirm? [y/N] ";
@@ -592,7 +573,8 @@ int cmd_pair(int argc, char* argv[]) {
   if (sub == "listen") {
     spoink::pairing::PairListenOptions opts;
     opts.port = port;
-    std::cerr << "waiting for pairing connection on port " << (port == 0 ? "(OS-assigned)" : std::to_string(port)) << " ...\n";
+    std::cerr << "waiting for pairing connection on port " << (port == 0 ? "(OS-assigned)" : std::to_string(port))
+              << " ...\n";
     pair_r = spoink::pairing::pair_listen(id, opts, confirm_fn);
   } else if (sub == "connect") {
     if (host.empty()) {
@@ -642,8 +624,9 @@ int cmd_peers(int argc, char* argv[]) {
   sqlite3* db = open_peers_db(state_root);
   if (db == nullptr) return 1;
 
-  const char* sql = "SELECT peer_id, display_name, paired_at_ms, revoked_at_ms "
-                    "FROM trusted_peers ORDER BY paired_at_ms DESC";
+  const char* sql =
+      "SELECT peer_id, display_name, paired_at_ms, revoked_at_ms "
+      "FROM trusted_peers ORDER BY paired_at_ms DESC";
   sqlite3_stmt* stmt = nullptr;
   if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
     std::cerr << "error: failed to query peers\n";
@@ -661,8 +644,7 @@ int cmd_peers(int argc, char* argv[]) {
     }
     const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
     const bool revoked = sqlite3_column_type(stmt, 3) != SQLITE_NULL;
-    std::cout << to_hex(pid_bytes) << "  "
-              << (name != nullptr ? name : "?") << "  "
+    std::cout << to_hex(pid_bytes) << "  " << (name != nullptr ? name : "?") << "  "
               << (revoked ? "[revoked]" : "[active]") << '\n';
     ++count;
   }
@@ -743,10 +725,8 @@ int cmd_send(int argc, char* argv[]) {
     sqlite3_close(db);
     return 1;
   }
-  spoink::offline::ManifestFile mf{src_path.filename().string(),
-                                    static_cast<std::uint64_t>(file_bytes.size()),
-                                    *file_digest_r.value_if(),
-                                    raw_chunks};
+  spoink::offline::ManifestFile mf{src_path.filename().string(), static_cast<std::uint64_t>(file_bytes.size()),
+                                   *file_digest_r.value_if(), raw_chunks};
 
   const auto created_ms = now_ms();
   auto manifest_r = spoink::offline::build_manifest({std::move(mf)}, profile, created_ms);
@@ -847,14 +827,13 @@ int main(int argc, char* argv[]) {
 
   std::string_view cmd{argv[1]};
 
-  if (cmd == "version")  return cmd_version();
-  if (cmd == "init")     return cmd_init(argc, argv);
-  if (cmd == "pair")     return cmd_pair(argc, argv);
-  if (cmd == "peers")    return cmd_peers(argc, argv);
-  if (cmd == "send")     return cmd_send(argc, argv);
-  if (cmd == "receive")  return cmd_receive(argc, argv);
+  if (cmd == "version") return cmd_version();
+  if (cmd == "init") return cmd_init(argc, argv);
+  if (cmd == "pair") return cmd_pair(argc, argv);
+  if (cmd == "peers") return cmd_peers(argc, argv);
+  if (cmd == "send") return cmd_send(argc, argv);
+  if (cmd == "receive") return cmd_receive(argc, argv);
 
-  std::cerr << "unknown command: " << cmd << '\n'
-            << "commands: version, init, pair, peers, send, receive\n";
+  std::cerr << "unknown command: " << cmd << '\n' << "commands: version, init, pair, peers, send, receive\n";
   return 2;
 }

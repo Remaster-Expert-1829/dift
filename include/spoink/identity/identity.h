@@ -35,14 +35,11 @@ class DeviceIdentity {
 
  private:
   friend support::Result<DeviceIdentity> load_or_create_identity(const std::filesystem::path& state_root,
-                                                                  std::string_view display_name);
+                                                                 std::string_view display_name);
 
   explicit DeviceIdentity(support::EvpPkeyPtr pkey, support::X509Ptr cert, support::PeerId peer_id,
                           std::string display_name)
-      : pkey_(std::move(pkey)),
-        cert_(std::move(cert)),
-        peer_id_(std::move(peer_id)),
-        display_name_(std::move(display_name)) {}
+      : pkey_(std::move(pkey)), cert_(std::move(cert)), peer_id_(peer_id), display_name_(std::move(display_name)) {}
 
   support::EvpPkeyPtr pkey_;
   support::X509Ptr cert_;
@@ -54,7 +51,7 @@ class DeviceIdentity {
 // state_root: directory; identity stored under state_root/identity/.
 // display_name: used as X.509 CN on creation; ignored on load.
 [[nodiscard]] support::Result<DeviceIdentity> load_or_create_identity(const std::filesystem::path& state_root,
-                                                                       std::string_view display_name);
+                                                                      std::string_view display_name);
 
 // Compute SHA-256 fingerprint of SPKI DER as peer ID.
 [[nodiscard]] support::Result<support::PeerId> compute_peer_id(evp_pkey_st* pkey);

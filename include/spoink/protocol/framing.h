@@ -102,7 +102,7 @@ class FrameReader {
  public:
   FrameReader() = default;
 
-  enum class State { kNeedPrefix, kNeedHeader, kNeedPayload, kComplete };
+  enum class State : std::uint8_t { kNeedPrefix, kNeedHeader, kNeedPayload, kComplete };
 
   [[nodiscard]] State state() const noexcept { return state_; }
   [[nodiscard]] bool complete() const noexcept { return state_ == State::kComplete; }

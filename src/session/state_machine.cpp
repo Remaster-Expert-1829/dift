@@ -7,12 +7,8 @@
 
 namespace spoink::session {
 
-
-SessionStateMachine::SessionStateMachine(Role role, support::PeerId local_peer_id,
-                                         std::uint64_t instance_nonce)
-    : role_(role),
-      local_peer_id_(std::move(local_peer_id)),
-      instance_nonce_(instance_nonce) {}
+SessionStateMachine::SessionStateMachine(Role role, support::PeerId local_peer_id, std::uint64_t instance_nonce)
+    : role_(role), local_peer_id_(local_peer_id), instance_nonce_(instance_nonce) {}
 
 // ── start() ──────────────────────────────────────────────────────────────────
 
@@ -27,8 +23,7 @@ std::vector<Effect> SessionStateMachine::start() {
     hello.instance_nonce[i] = static_cast<std::byte>((instance_nonce_ >> (i * 8U)) & 0xFFU);
   }
 
-  auto send = make_send(protocol::Channel::kControl, protocol::MessageType::kHello,
-                        protocol::encode_hello(hello));
+  auto send = make_send(protocol::Channel::kControl, protocol::MessageType::kHello, protocol::encode_hello(hello));
 
   state_ = State::kHelloSent;
 
@@ -44,24 +39,24 @@ std::vector<Effect> SessionStateMachine::process(Input input) {
   return std::visit(
       [this](auto&& in) -> std::vector<Effect> {
         using T = std::decay_t<decltype(in)>;
-        if constexpr (std::is_same_v<T, MsgIn>)         return handle_msg(in);
-        if constexpr (std::is_same_v<T, ConnClosed>)    {
+        if constexpr (std::is_same_v<T, MsgIn>) return handle_msg(in);
+        if constexpr (std::is_same_v<T, ConnClosed>) {
           state_ = State::kError;
           return {EffCloseConn{in.reason}};
         }
-        if constexpr (std::is_same_v<T, TimerFired>)    {
+        if constexpr (std::is_same_v<T, TimerFired>) {
           if (state_ != State::kComplete && state_ != State::kCancelled && state_ != State::kError) {
             state_ = State::kError;
             return protocol_error("m2.sm.timeout");
           }
           return {};
         }
-        if constexpr (std::is_same_v<T, StartSender>)      return handle_start_sender(in);
-        if constexpr (std::is_same_v<T, LocalAccept>)      return handle_local_accept(in);
-        if constexpr (std::is_same_v<T, LocalReject>)      return handle_local_reject(in);
-        if constexpr (std::is_same_v<T, ChunkStored>)      return handle_chunk_stored(in);
+        if constexpr (std::is_same_v<T, StartSender>) return handle_start_sender(in);
+        if constexpr (std::is_same_v<T, LocalAccept>) return handle_local_accept(in);
+        if constexpr (std::is_same_v<T, LocalReject>) return handle_local_reject(in);
+        if constexpr (std::is_same_v<T, ChunkStored>) return handle_chunk_stored(in);
         if constexpr (std::is_same_v<T, ChunkStoreFailed>) return handle_chunk_store_failed(in);
-        if constexpr (std::is_same_v<T, SendFileResult>)   return handle_send_file_result(in);
+        if constexpr (std::is_same_v<T, SendFileResult>) return handle_send_file_result(in);
         if constexpr (std::is_same_v<T, SendSessionResult>) return handle_send_session_result(in);
         return {};
       },
@@ -88,7 +83,8 @@ std::vector<Effect> SessionStateMachine::handle_msg(const MsgIn& msg) {
       if (r.has_value()) return handle_ping(*r.value_if());
       return protocol_error("m2.sm.bad_ping");
     }
-    case MT::kPong:           return {};  // keepalive response; ignore
+    case MT::kPong:
+      return {};  // keepalive response; ignore
     case MT::kSessionOffer: {
       auto r = protocol::decode_session_offer(msg.header);
       if (!r.has_value()) return protocol_error("m2.sm.bad_offer");
@@ -197,8 +193,7 @@ std::vector<Effect> SessionStateMachine::handle_start_sender(const StartSender& 
   active_offer_ = cmd.offer;
   state_ = State::kOfferSent;
 
-  return {make_send(protocol::Channel::kControl, protocol::MessageType::kSessionOffer,
-                    std::move(header))};
+  return {make_send(protocol::Channel::kControl, protocol::MessageType::kSessionOffer, std::move(header))};
 }
 
 std::vector<Effect> SessionStateMachine::handle_session_offer(const protocol::SessionOfferMsg& msg) {
@@ -221,8 +216,8 @@ std::vector<Effect> SessionStateMachine::handle_local_accept(const LocalAccept& 
 
   auto header = protocol::encode_session_accept(cmd.accept);
   std::vector<Effect> effects;
-  effects.emplace_back(make_send(protocol::Channel::kControl, protocol::MessageType::kSessionAccept,
-                                  std::move(header)));
+  effects.emplace_back(
+      make_send(protocol::Channel::kControl, protocol::MessageType::kSessionAccept, std::move(header)));
   effects.emplace_back(EffAccepted{cmd.accept});
   return effects;
 }
@@ -236,8 +231,8 @@ std::vector<Effect> SessionStateMachine::handle_local_reject(const LocalReject& 
   reject_msg.reason = cmd.reason;
   auto header = protocol::encode_session_reject(reject_msg);
   std::vector<Effect> effects;
-  effects.emplace_back(make_send(protocol::Channel::kControl, protocol::MessageType::kSessionReject,
-                                  std::move(header)));
+  effects.emplace_back(
+      make_send(protocol::Channel::kControl, protocol::MessageType::kSessionReject, std::move(header)));
   effects.emplace_back(EffCloseConn{cmd.reason});
   return effects;
 }
@@ -256,21 +251,20 @@ std::vector<Effect> SessionStateMachine::handle_session_accept(const protocol::S
   begin.manifest_digest = {};  // caller should have computed this; zero for now
   begin.total_bytes = static_cast<std::uint64_t>(pending_manifest_cbor_.size());
 
-  constexpr std::uint64_t kPartSize = protocol::Limits::kMaxPayloadBytes;
+  constexpr std::uint64_t part_size = protocol::Limits::kMaxPayloadBytes;
   const std::uint64_t total = begin.total_bytes;
-  begin.part_count = static_cast<std::uint32_t>((total + kPartSize - 1U) / kPartSize);
+  begin.part_count = static_cast<std::uint32_t>((total + part_size - 1U) / part_size);
   if (begin.part_count == 0) begin.part_count = 1;
 
   std::vector<Effect> effects;
-  effects.emplace_back(make_send(protocol::Channel::kControl,
-                                  protocol::MessageType::kManifestBegin,
-                                  protocol::encode_manifest_begin(begin)));
+  effects.emplace_back(make_send(protocol::Channel::kControl, protocol::MessageType::kManifestBegin,
+                                 protocol::encode_manifest_begin(begin)));
 
   // Send each manifest part.
   std::uint64_t offset = 0;
   std::uint32_t part_index = 0;
   while (offset < total) {
-    const std::uint64_t chunk_size = std::min(kPartSize, total - offset);
+    const std::uint64_t chunk_size = std::min(part_size, total - offset);
     protocol::ManifestPartMsg part;
     part.transfer_id = msg.transfer_id;
     part.part_index = part_index++;
@@ -296,9 +290,8 @@ std::vector<Effect> SessionStateMachine::handle_session_accept(const protocol::S
   protocol::ManifestEndMsg end;
   end.transfer_id = msg.transfer_id;
   end.manifest_digest = begin.manifest_digest;
-  effects.emplace_back(make_send(protocol::Channel::kControl,
-                                  protocol::MessageType::kManifestEnd,
-                                  protocol::encode_manifest_end(end)));
+  effects.emplace_back(
+      make_send(protocol::Channel::kControl, protocol::MessageType::kManifestEnd, protocol::encode_manifest_end(end)));
 
   manifest_parts_sent_ = part_index;
   state_ = State::kPlanPending;
@@ -326,7 +319,7 @@ std::vector<Effect> SessionStateMachine::handle_manifest_begin(const protocol::M
 }
 
 std::vector<Effect> SessionStateMachine::handle_manifest_part(const protocol::ManifestPartMsg& msg,
-                                                               std::vector<std::byte> payload) {
+                                                              std::vector<std::byte> payload) {
   if (state_ != State::kManifestReceiving || role_ != Role::kReceiver || !manifest_begin_.has_value()) {
     return protocol_error("m2.sm.manifest_part_order");
   }
@@ -343,8 +336,7 @@ std::vector<Effect> SessionStateMachine::handle_manifest_part(const protocol::Ma
   ++manifest_parts_received_;
 
   std::vector<Effect> effects;
-  effects.emplace_back(EffManifestData{msg.transfer_id,
-                                       std::vector<std::byte>(payload.begin(), payload.end())});
+  effects.emplace_back(EffManifestData{msg.transfer_id, std::vector<std::byte>(payload.begin(), payload.end())});
   return effects;
 }
 
@@ -370,16 +362,14 @@ std::vector<Effect> SessionStateMachine::handle_transfer_plan(const protocol::Tr
 }
 
 std::vector<Effect> SessionStateMachine::handle_chunk_put(const protocol::ChunkPutMsg& msg,
-                                                           std::vector<std::byte> payload) {
-  if (role_ != Role::kReceiver ||
-      (state_ != State::kTransferring && state_ != State::kPlanSending)) {
+                                                          std::vector<std::byte> payload) {
+  if (role_ != Role::kReceiver || (state_ != State::kTransferring && state_ != State::kPlanSending)) {
     return protocol_error("m2.sm.chunk_put_order");
   }
   state_ = State::kTransferring;  // auto-transition from kPlanSending on first chunk
   // IC-007: do not send ACK now. Emit EffChunkReceived so the application layer
   // can commit blob+DB, then call process(ChunkStored{}) or ChunkStoreFailed{}.
-  return {EffChunkReceived{msg.transfer_id, msg.chunk_hash, std::move(payload),
-                           msg.codec, msg.plaintext_length}};
+  return {EffChunkReceived{msg.transfer_id, msg.chunk_hash, std::move(payload), msg.codec, msg.plaintext_length}};
 }
 
 std::vector<Effect> SessionStateMachine::handle_chunk_stored(const ChunkStored& cmd) {
@@ -390,8 +380,7 @@ std::vector<Effect> SessionStateMachine::handle_chunk_stored(const ChunkStored& 
   ack.transfer_id = cmd.transfer_id;
   ack.chunk_hash = cmd.chunk_hash;
   ack.status = "STORED";
-  return {make_send(protocol::Channel::kData, protocol::MessageType::kChunkAck,
-                    protocol::encode_chunk_ack(ack)),
+  return {make_send(protocol::Channel::kData, protocol::MessageType::kChunkAck, protocol::encode_chunk_ack(ack)),
           EffChunkAck{cmd.chunk_hash, "STORED"}};
 }
 
@@ -404,14 +393,12 @@ std::vector<Effect> SessionStateMachine::handle_chunk_store_failed(const ChunkSt
   nack.chunk_hash = cmd.chunk_hash;
   nack.error_code = cmd.error_code;
   nack.retryable = cmd.retryable;
-  return {make_send(protocol::Channel::kData, protocol::MessageType::kChunkNack,
-                    protocol::encode_chunk_nack(nack)),
+  return {make_send(protocol::Channel::kData, protocol::MessageType::kChunkNack, protocol::encode_chunk_nack(nack)),
           EffChunkNack{cmd.chunk_hash, cmd.error_code, cmd.retryable}};
 }
 
 std::vector<Effect> SessionStateMachine::handle_send_file_result(const SendFileResult& cmd) {
-  if (role_ != Role::kReceiver ||
-      (state_ != State::kTransferring && state_ != State::kDraining)) {
+  if (role_ != Role::kReceiver || (state_ != State::kTransferring && state_ != State::kDraining)) {
     return protocol_error("m2.sm.file_result_order");
   }
   state_ = State::kDraining;
@@ -420,8 +407,7 @@ std::vector<Effect> SessionStateMachine::handle_send_file_result(const SendFileR
   msg.file_id = cmd.file_id;
   msg.state = cmd.state;
   msg.error_code = cmd.error_code;
-  return {make_send(protocol::Channel::kControl, protocol::MessageType::kFileResult,
-                    protocol::encode_file_result(msg)),
+  return {make_send(protocol::Channel::kControl, protocol::MessageType::kFileResult, protocol::encode_file_result(msg)),
           EffFileResult{cmd.file_id, cmd.state, cmd.error_code}};
 }
 
@@ -437,9 +423,7 @@ std::vector<Effect> SessionStateMachine::handle_send_session_result(const SendSe
   msg.files_failed = cmd.files_failed;
   return {make_send(protocol::Channel::kControl, protocol::MessageType::kSessionResult,
                     protocol::encode_session_result(msg)),
-          EffSessionResult{cmd.transfer_id, cmd.state},
-          EffCancelTimer{kTimerIdle},
-          EffCloseConn{"session complete"}};
+          EffSessionResult{cmd.transfer_id, cmd.state}, EffCancelTimer{kTimerIdle}, EffCloseConn{"session complete"}};
 }
 
 std::vector<Effect> SessionStateMachine::handle_chunk_ack(const protocol::ChunkAckMsg& msg) {
@@ -489,8 +473,7 @@ std::vector<Effect> SessionStateMachine::handle_error(const protocol::ErrorMsg& 
 std::vector<Effect> SessionStateMachine::handle_ping(const protocol::PingMsg& msg) {
   protocol::PongMsg pong;
   pong.monotonic_token = msg.monotonic_token;
-  return {make_send(protocol::Channel::kControl, protocol::MessageType::kPong,
-                    protocol::encode_pong(pong))};
+  return {make_send(protocol::Channel::kControl, protocol::MessageType::kPong, protocol::encode_pong(pong))};
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -502,16 +485,15 @@ std::vector<Effect> SessionStateMachine::protocol_error(const char* code) {
   protocol::ErrorMsg err;
   err.error_code = code;
   err.retryable = false;
-  effects.emplace_back(make_send(protocol::Channel::kControl, protocol::MessageType::kError,
-                                  protocol::encode_error(err)));
+  effects.emplace_back(
+      make_send(protocol::Channel::kControl, protocol::MessageType::kError, protocol::encode_error(err)));
   effects.emplace_back(EffProtocolError{std::string{code}});
   effects.emplace_back(EffCloseConn{std::string{code}});
   return effects;
 }
 
 EffSendFrame SessionStateMachine::make_send(protocol::Channel ch, protocol::MessageType mt,
-                                             std::vector<std::byte> header,
-                                             std::vector<std::byte> payload) {
+                                            std::vector<std::byte> header, std::vector<std::byte> payload) {
   protocol::FramePrefix pfx;
   pfx.channel = ch;
   pfx.message_type = mt;

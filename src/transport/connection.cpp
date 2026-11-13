@@ -24,13 +24,9 @@ namespace spoink::transport {
 
 namespace {
 
-support::Error make_net(const char* key) {
-  return support::make_error(support::ErrorCode::kResourceFailure, key);
-}
+support::Error make_net(const char* key) { return support::make_error(support::ErrorCode::kResourceFailure, key); }
 
-support::Error make_auth(const char* key) {
-  return support::make_error(support::ErrorCode::kInvalidArgument, key);
-}
+support::Error make_auth(const char* key) { return support::make_error(support::ErrorCode::kInvalidArgument, key); }
 
 void set_socket_timeout(int fd, std::uint32_t ms) {
   struct timeval tv {};
@@ -70,8 +66,7 @@ bool ssl_read_all(ssl_st* ssl, void* buf, int n) {
 
 TlsConnection::~TlsConnection() { close(); }
 
-TlsConnection::TlsConnection(TlsConnection&& o) noexcept
-    : ssl_(o.ssl_), fd_(o.fd_), peer_id_(o.peer_id_) {
+TlsConnection::TlsConnection(TlsConnection&& o) noexcept : ssl_(o.ssl_), fd_(o.fd_), peer_id_(o.peer_id_) {
   o.ssl_ = nullptr;
   o.fd_ = -1;
 }
@@ -100,10 +95,9 @@ void TlsConnection::close() {
   }
 }
 
-support::Result<void> TlsConnection::send_frame(
-    const protocol::FramePrefix& prefix,
-    const std::vector<std::byte>& header,
-    const std::vector<std::byte>& payload) {
+support::Result<void> TlsConnection::send_frame(const protocol::FramePrefix& prefix,
+                                                const std::vector<std::byte>& header,
+                                                const std::vector<std::byte>& payload) {
   if (ssl_ == nullptr) return support::Result<void>::failure(make_net("m2.transport.not_connected"));
   const auto wire = protocol::encode_prefix(prefix);
   if (!ssl_write_all(ssl_, wire.data(), static_cast<int>(wire.size()))) {
@@ -118,8 +112,7 @@ support::Result<void> TlsConnection::send_frame(
   return support::Result<void>::success();
 }
 
-support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>
-TlsConnection::read_frame() {
+support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>> TlsConnection::read_frame() {
   using R = support::Result<std::pair<protocol::FramePrefix, std::vector<std::byte>>>;
   if (ssl_ == nullptr) return R::failure(make_net("m2.transport.not_connected"));
 
@@ -135,8 +128,7 @@ TlsConnection::read_frame() {
   auto len_r = protocol::validate_prefix_lengths(pfx);
   if (!len_r.has_value()) return R::failure(len_r.error());
 
-  const std::size_t total =
-      static_cast<std::size_t>(pfx.header_length) + static_cast<std::size_t>(pfx.payload_length);
+  const std::size_t total = static_cast<std::size_t>(pfx.header_length) + static_cast<std::size_t>(pfx.payload_length);
   std::vector<std::byte> body(total);
   if (total > 0 && !ssl_read_all(ssl_, body.data(), static_cast<int>(total))) {
     return R::failure(make_net("m2.transport.read_body"));
@@ -146,8 +138,7 @@ TlsConnection::read_frame() {
 
 // ── SPKI pin verification ─────────────────────────────────────────────────────
 
-support::Result<void>
-verify_spki_pin(ssl_st* ssl, const std::vector<std::byte>& expected_spki_der) {
+support::Result<void> verify_spki_pin(ssl_st* ssl, const std::vector<std::byte>& expected_spki_der) {
   X509* cert = SSL_get_peer_certificate(ssl);
   if (cert == nullptr) {
     return support::Result<void>::failure(make_auth("m2.transport.no_peer_cert"));
@@ -165,8 +156,7 @@ verify_spki_pin(ssl_st* ssl, const std::vector<std::byte>& expected_spki_der) {
   int diff = len_match ? 0 : 1;
   if (len_match) {
     // Constant-time comparison to avoid timing oracle.
-    diff = CRYPTO_memcmp(actual_der, expected_spki_der.data(),
-                         static_cast<std::size_t>(actual_len));
+    diff = CRYPTO_memcmp(actual_der, expected_spki_der.data(), static_cast<std::size_t>(actual_len));
   }
   OPENSSL_free(actual_der);
 
@@ -178,10 +168,8 @@ verify_spki_pin(ssl_st* ssl, const std::vector<std::byte>& expected_spki_der) {
 
 // ── tls_connect / tls_accept_one ─────────────────────────────────────────────
 
-support::Result<TlsConnection>
-tls_connect(const identity::DeviceIdentity& identity,
-            const ConnectOptions& opts,
-            sqlite3* db) {
+support::Result<TlsConnection> tls_connect(const identity::DeviceIdentity& identity, const ConnectOptions& opts,
+                                           sqlite3* db) {
   auto ctx_r = identity.make_tls_context("spoink/1", true);
   if (!ctx_r.has_value()) return support::Result<TlsConnection>::failure(ctx_r.error());
   ssl_ctx_st* ctx = ctx_r.value_if()->get();
@@ -282,8 +270,7 @@ tls_connect(const identity::DeviceIdentity& identity,
   return support::Result<TlsConnection>::success(TlsConnection{ssl, fd, peer_id});
 }
 
-support::Result<std::uint16_t>
-get_bound_port(int server_fd) {
+support::Result<std::uint16_t> get_bound_port(int server_fd) {
   struct sockaddr_in6 addr {};
   socklen_t len = sizeof(addr);
   if (::getsockname(server_fd, reinterpret_cast<struct sockaddr*>(&addr), &len) != 0) {
@@ -292,10 +279,8 @@ get_bound_port(int server_fd) {
   return support::Result<std::uint16_t>::success(ntohs(addr.sin6_port));
 }
 
-support::Result<TlsConnection>
-tls_accept_one(const identity::DeviceIdentity& identity,
-               const ListenOptions& opts,
-               sqlite3* db) {
+support::Result<TlsConnection> tls_accept_one(const identity::DeviceIdentity& identity, const ListenOptions& opts,
+                                              sqlite3* db) {
   auto ctx_r = identity.make_tls_context("spoink/1", true);
   if (!ctx_r.has_value()) return support::Result<TlsConnection>::failure(ctx_r.error());
   ssl_ctx_st* ctx = ctx_r.value_if()->get();

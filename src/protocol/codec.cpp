@@ -25,6 +25,7 @@ void copy16(std::array<std::byte, 16>& dst, const std::vector<std::byte>& src) {
 
 // ── CborEncoder ──────────────────────────────────────────────────────────────
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void CborEncoder::write_head(std::uint8_t major, std::uint64_t value) {
   const std::uint8_t mt = static_cast<std::uint8_t>(major << 5U);
   if (value <= 23U) {
@@ -67,9 +68,7 @@ void CborEncoder::encode_bytes(const std::byte* data, std::size_t len) {
   buf_.insert(buf_.end(), data, data + len);
 }
 
-void CborEncoder::encode_bool(bool v) {
-  buf_.push_back(static_cast<std::byte>(v ? 0xF5U : 0xF4U));
-}
+void CborEncoder::encode_bool(bool v) { buf_.push_back(static_cast<std::byte>(v ? 0xF5U : 0xF4U)); }
 
 void CborEncoder::encode_null() { buf_.push_back(static_cast<std::byte>(0xF6U)); }
 
@@ -200,7 +199,10 @@ support::Result<void> CborDecoder::skip() {
     return support::Result<void>::success();
   }
   // Major 7 (simple/float) — simple values
-  if (major == 7U) { ++pos_; return support::Result<void>::success(); }
+  if (major == 7U) {
+    ++pos_;
+    return support::Result<void>::success();
+  }
   return support::Result<void>::failure(make_malformed("m2.cbor.unknown_major"));
 }
 
@@ -208,6 +210,7 @@ support::Result<void> CborDecoder::skip() {
 
 namespace {
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void enc_kv_text(CborEncoder& enc, std::string_view key, std::string_view val) {
   enc.encode_text(key);
   enc.encode_text(val);
@@ -471,9 +474,7 @@ std::vector<std::byte> encode_cancel(const CancelMsg& msg) {
 }
 
 // Fix encode_transfer_plan to use the proper implementation:
-std::vector<std::byte> encode_transfer_plan(const TransferPlanMsg& msg) {
-  return encode_transfer_plan_impl(msg);
-}
+std::vector<std::byte> encode_transfer_plan(const TransferPlanMsg& msg) { return encode_transfer_plan_impl(msg); }
 
 // ── Decode helpers ───────────────────────────────────────────────────────────
 

@@ -1,19 +1,17 @@
-#include <catch2/catch_test_macros.hpp>
+#include "spoink/identity/identity.h"
 
 #include <sys/stat.h>
 
+#include <catch2/catch_test_macros.hpp>
 #include <cstdio>
 #include <filesystem>
 #include <string>
 
-#include "spoink/identity/identity.h"
 #include "spoink/support/result.h"
 
 namespace {
 
-std::filesystem::path temp_state_root() {
-  return std::filesystem::temp_directory_path() / "spoink_identity_test";
-}
+std::filesystem::path temp_state_root() { return std::filesystem::temp_directory_path() / "spoink_identity_test"; }
 
 }  // namespace
 
@@ -30,7 +28,11 @@ TEST_CASE("load_or_create_identity: creates new identity on first call", "[ident
   // peer_id must be non-zero
   const auto& pid = id.peer_id().bytes();
   bool any_nonzero = false;
-  for (auto b : pid) if (b != std::byte{0}) { any_nonzero = true; break; }
+  for (auto b : pid)
+    if (b != std::byte{0}) {
+      any_nonzero = true;
+      break;
+    }
   REQUIRE(any_nonzero);
 
   std::filesystem::remove_all(root);

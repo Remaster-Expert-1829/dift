@@ -9,8 +9,7 @@ namespace spoink::protocol {
 
 namespace {
 
-static constexpr std::array<std::byte, 4> kMagic{std::byte{0x53}, std::byte{0x50},
-                                                   std::byte{0x4E}, std::byte{0x4B}};
+static constexpr std::array<std::byte, 4> kMagic{std::byte{0x53}, std::byte{0x50}, std::byte{0x4E}, std::byte{0x4B}};
 
 void write_be16(std::byte* dst, std::uint16_t v) {
   dst[0] = static_cast<std::byte>((v >> 8U) & 0xFFU);
@@ -31,8 +30,7 @@ void write_be64(std::byte* dst, std::uint64_t v) {
 }
 
 std::uint16_t read_be16(const std::byte* src) {
-  return static_cast<std::uint16_t>((static_cast<std::uint16_t>(src[0]) << 8U) |
-                                    static_cast<std::uint16_t>(src[1]));
+  return static_cast<std::uint16_t>((static_cast<std::uint16_t>(src[0]) << 8U) | static_cast<std::uint16_t>(src[1]));
 }
 
 std::uint32_t read_be32(const std::byte* src) {
