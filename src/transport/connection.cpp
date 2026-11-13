@@ -28,6 +28,7 @@ support::Error make_net(const char* key) { return support::make_error(support::E
 
 support::Error make_auth(const char* key) { return support::make_error(support::ErrorCode::kInvalidArgument, key); }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 void set_socket_timeout(int fd, std::uint32_t ms) {
   struct timeval tv {};
   tv.tv_sec = static_cast<time_t>(ms / 1000U);

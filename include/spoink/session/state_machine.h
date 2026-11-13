@@ -85,7 +85,7 @@ struct ChunkStoreFailed {
 
 // Caller signals: file result ready to send (receiver side).
 struct SendFileResult {
-  std::array<std::byte, 16> transfer_id;
+  std::array<std::byte, 16> transfer_id{};
   std::uint32_t file_id{0};
   std::string state;
   std::string error_code;
@@ -93,7 +93,7 @@ struct SendFileResult {
 
 // Caller signals: session result ready to send (receiver side).
 struct SendSessionResult {
-  std::array<std::byte, 16> transfer_id;
+  std::array<std::byte, 16> transfer_id{};
   std::string state;
   std::uint32_t files_completed{0};
   std::uint32_t files_failed{0};

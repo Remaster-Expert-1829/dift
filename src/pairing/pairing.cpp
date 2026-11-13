@@ -170,10 +170,11 @@ support::Result<protocol::PairResultMsg> recv_pair_result(ssl_st* ssl) {
 
 // Derives SAS context bytes: min(a,b) || max(a,b) || min(n1,n2) || max(n1,n2).
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-std::vector<unsigned char> make_exporter_context(const std::array<std::byte, 32>& id_local,
-                                                 const std::array<std::byte, 32>& id_remote,
-                                                 const std::array<std::byte, 32>& nonce_local,
-                                                 const std::array<std::byte, 32>& nonce_remote) {
+std::vector<unsigned char> make_exporter_context(
+    const std::array<std::byte, 32>& id_local,
+    const std::array<std::byte, 32>& id_remote,  // NOLINT(bugprone-easily-swappable-parameters)
+    const std::array<std::byte, 32>& nonce_local,
+    const std::array<std::byte, 32>& nonce_remote) {  // NOLINT(bugprone-easily-swappable-parameters)
   const bool id_local_smaller = (id_local < id_remote);
   const auto& id_min = id_local_smaller ? id_local : id_remote;
   const auto& id_max = id_local_smaller ? id_remote : id_local;

@@ -34,11 +34,11 @@ namespace {
 // ── State-root helpers ────────────────────────────────────────────────────────
 
 std::filesystem::path default_state_root() {
-  const char* xdg = std::getenv("XDG_DATA_HOME");
+  const char* xdg = std::getenv("XDG_DATA_HOME");  // NOLINT(concurrency-mt-unsafe)
   if (xdg != nullptr && xdg[0] != '\0') {
     return std::filesystem::path{xdg} / "spoink";
   }
-  const char* home = std::getenv("HOME");
+  const char* home = std::getenv("HOME");  // NOLINT(concurrency-mt-unsafe)
   if (home != nullptr && home[0] != '\0') {
     return std::filesystem::path{home} / ".local" / "share" / "spoink";
   }
@@ -402,7 +402,7 @@ int run_receiver_session(spoink::transport::TlsConnection& conn, const spoink::i
           (void)meta.record_verified(digest, static_cast<std::uint64_t>(echunk->payload.size()));
         }
 
-        spoink::session::ChunkStored cs;
+        spoink::session::ChunkStored cs{};
         cs.chunk_hash = echunk->chunk_hash;
         cs.transfer_id = echunk->transfer_id;
         auto ack_effects = sm.process(cs);

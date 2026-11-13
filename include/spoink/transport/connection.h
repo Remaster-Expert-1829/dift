@@ -63,7 +63,7 @@ class TlsConnection {
   friend support::Result<TlsConnection> tls_accept_one(const identity::DeviceIdentity& identity,
                                                        const ListenOptions& opts, sqlite3* db);
 
-  TlsConnection(ssl_st* ssl, int fd, support::PeerId peer_id) : ssl_(ssl), fd_(fd), peer_id_(std::move(peer_id)) {}
+  TlsConnection(ssl_st* ssl, int fd, support::PeerId peer_id) : ssl_(ssl), fd_(fd), peer_id_(peer_id) {}
 
   ssl_st* ssl_{nullptr};
   int fd_{-1};
