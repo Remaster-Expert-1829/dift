@@ -23,9 +23,9 @@ An independent developer or coding agent can begin M0 and the parameterized/offl
 
 No unresolved product-owner decision currently blocks M0/M1. The following engineering decisions/experiments must be completed at their gates:
 
-1. `EXP-CDC-001` — exact `rabin-v1` polynomial/window/min/target/max parameters and golden vectors.
-2. `TBD-SEC-KEY-001` — permitted device key algorithm/strength for the selected OpenSSL/toolchain.
-3. `TBD-LIMITS-001` — parser, manifest, path, connection, in-flight, timeout, and handshake ceilings/defaults.
+1. `EXP-CDC-001` — exact `rabin-v1` polynomial/window/min/target/max parameters and golden vectors. **Resolved in M1-001** (2026-11-03): polynomial=0x3da3358b4dc173, window=32, min=1024, target=16384, max=65536, mask=0x3FFF, value=0. Golden vectors in `benchmarks/exp_cdc_001/golden_vectors.txt`.
+2. `TBD-SEC-KEY-001` — permitted device key algorithm/strength for the selected OpenSSL/toolchain. **Resolved in M2-001 Architect plan** (2026-11-13): Ed25519 (RFC 8032) via OpenSSL 3.6.0 EVP_PKEY_ED25519, 128-bit security. See `agent/architecture/current-plan.md` for full evidence and rationale.
+3. `TBD-LIMITS-001` — parser, manifest, path, connection, in-flight, timeout, and handshake ceilings/defaults. **M2-required subset resolved in M2-001 Architect plan** (2026-11-13): max_header=8192, max_payload=131072, max_manifest=16MiB, max_path=4096, max_files=10000 (M2 default 1), max_chunks=1000000, max_data_connections=8 (M2 default 1), handshake_timeout=30s (default 10s), connection_idle_timeout=5min (default 60s), concurrent_handshakes=8 (default 4). Full table in `agent/architecture/current-plan.md`. M3+ in-flight/scheduler/retry ceilings remain open.
 4. `EXP-COMP-001` — initial auto-compression profile.
 5. `EXP-SCHED-001–006` — adaptive policy defaults.
 6. `TBD-OPS-RETENTION` — completed/paused/failed session, unreferenced chunk, log, and quarantine retention defaults.
@@ -46,7 +46,7 @@ Highest current risks are pairing correctness (`RISK-002`), filesystem/database 
 
 - **M0:** None. `TBD-ENG-DEP-001` is resolved by the repository-controlled vcpkg baseline `74e6536215718009aae747d86d84b78376bf9e09`, Catch2 `3.11.0#0`, toolchain records, notices, bootstrap, and CI in the M0 build foundation.
 - **M1 core:** None; CDC must be parameterized. `rabin-v1` cannot be declared frozen until EXP-CDC-001.
-- **M2 secure protocol freeze:** blocked until `TBD-SEC-KEY-001` and required parts of `TBD-LIMITS-001` are resolved.
+- **M2 secure protocol freeze:** `TBD-SEC-KEY-001` resolved (Ed25519, 2026-11-13). `TBD-LIMITS-001` M2-required subset resolved (frame/parser/session/timeout ceilings, 2026-11-13). M2 implementation may proceed. M3+ in-flight/scheduler/retry ceilings remain open within `TBD-LIMITS-001`.
 - **M4 default adaptive/auto behavior:** blocked until the related experiments complete; static/raw modes can be implemented earlier.
 - **Public v1 release:** blocked until every condition above, release gate, consistency review, and independent Reviewer PASS are complete.
 

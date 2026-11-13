@@ -43,8 +43,8 @@
 | ID | Condition | Owner / resolution |
 |---|---|---|
 | EXP-CDC-001 | Select and freeze `rabin-v1` parameters/golden vectors. | Builder/Reviewer in M1 via CDC experiment. |
-| TBD-SEC-KEY-001 | Select permitted device key algorithm/strength supported by target TLS stack. | Architect/security review before M2. |
-| TBD-LIMITS-001 | Select default and absolute parser/resource/timeout ceilings. | Architect/Builder before M2 protocol freeze, using safety analysis/tests. |
+| TBD-SEC-KEY-001 | Select permitted device key algorithm/strength supported by target TLS stack. | **Resolved 2026-11-13** by M2-001 Architect: Ed25519 (RFC 8032) via OpenSSL 3.6.0. 128-bit security. See `agent/architecture/current-plan.md`. |
+| TBD-LIMITS-001 | Select default and absolute parser/resource/timeout ceilings. | **M2 subset resolved 2026-11-13** by M2-001 Architect: frame/parser/session/timeout ceilings selected. M3+ in-flight/scheduler/retry ceilings remain open. See `agent/architecture/current-plan.md`. |
 | EXP-COMP-001 | Select conservative auto compression threshold/policy. | M4 benchmark training/validation split. |
 | EXP-SCHED-001–006 | Select adaptive profile values. | M4 simulation/shaped-network evidence. |
 | TBD-OPS-RETENTION | Choose release retention/grace defaults. | M5 capacity/recovery tests and operator documentation. |
