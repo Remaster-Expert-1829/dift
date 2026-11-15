@@ -70,15 +70,15 @@ struct LocalReject {
 // Caller signals: chunk blob committed to store + DB (receiver side).
 // The state machine then emits EffSendFrame(CHUNK_ACK).
 struct ChunkStored {
-  std::array<std::byte, 32> chunk_hash;
-  std::array<std::byte, 16> transfer_id;
+  std::array<std::byte, 32> chunk_hash{};
+  std::array<std::byte, 16> transfer_id{};
 };
 
 // Caller signals: chunk store failed (receiver side).
 // The state machine then emits EffSendFrame(CHUNK_NACK).
 struct ChunkStoreFailed {
-  std::array<std::byte, 32> chunk_hash;
-  std::array<std::byte, 16> transfer_id;
+  std::array<std::byte, 32> chunk_hash{};
+  std::array<std::byte, 16> transfer_id{};
   std::string error_code;
   bool retryable{false};
 };

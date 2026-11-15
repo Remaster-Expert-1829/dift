@@ -99,35 +99,36 @@ bool feed_frame(spoink::session::SessionStateMachine& sm, spoink::transport::Tls
 }  // namespace
 
 TEST_CASE("TEST-E2E-001: pair + transfer one small file, byte-identical output", "[e2e]") {
-  const auto rootS = std::filesystem::temp_directory_path() / "spoink_e2e001_s";
-  const auto rootR = std::filesystem::temp_directory_path() / "spoink_e2e001_r";
-  std::filesystem::remove_all(rootS);
-  std::filesystem::remove_all(rootR);
+  const auto root_sender = std::filesystem::temp_directory_path() / "spoink_e2e001_s";
+  const auto root_receiver = std::filesystem::temp_directory_path() / "spoink_e2e001_r";
+  std::filesystem::remove_all(root_sender);
+  std::filesystem::remove_all(root_receiver);
 
-  auto idS_r = spoink::identity::load_or_create_identity(rootS, "E2ESender");
-  REQUIRE(idS_r.has_value());
-  auto idR_r = spoink::identity::load_or_create_identity(rootR, "E2EReceiver");
-  REQUIRE(idR_r.has_value());
+  auto id_sender_r = spoink::identity::load_or_create_identity(root_sender, "E2ESender");
+  REQUIRE(id_sender_r.has_value());
+  auto id_receiver_r = spoink::identity::load_or_create_identity(root_receiver, "E2EReceiver");
+  REQUIRE(id_receiver_r.has_value());
 
-  const auto& idS = *idS_r.value_if();
-  const auto& idR = *idR_r.value_if();
+  const auto& id_sender = *id_sender_r.value_if();
+  const auto& id_receiver = *id_receiver_r.value_if();
 
-  sqlite3* dbS = make_db();
-  sqlite3* dbR = make_db();
-  REQUIRE(dbS != nullptr);
-  REQUIRE(dbR != nullptr);
+  sqlite3* db_sender = make_db();
+  sqlite3* db_receiver = make_db();
+  REQUIRE(db_sender != nullptr);
+  REQUIRE(db_receiver != nullptr);
 
   // Simulate pairing by inserting each peer into the other's trust store.
   {
-    spoink::pairing::PairedPeer pS{idS.peer_id(), idS.display_name(), spki_der_from_cert(idS.cert()),
-                                   cert_der_from_cert(idS.cert())};
-    REQUIRE(!pS.spki_der.empty());
-    REQUIRE(spoink::pairing::save_trusted_peer(dbR, pS).has_value());
+    spoink::pairing::PairedPeer peer_sender{id_sender.peer_id(), id_sender.display_name(),
+                                            spki_der_from_cert(id_sender.cert()), cert_der_from_cert(id_sender.cert())};
+    REQUIRE(!peer_sender.spki_der.empty());
+    REQUIRE(spoink::pairing::save_trusted_peer(db_receiver, peer_sender).has_value());
 
-    spoink::pairing::PairedPeer pR{idR.peer_id(), idR.display_name(), spki_der_from_cert(idR.cert()),
-                                   cert_der_from_cert(idR.cert())};
-    REQUIRE(!pR.spki_der.empty());
-    REQUIRE(spoink::pairing::save_trusted_peer(dbS, pR).has_value());
+    spoink::pairing::PairedPeer peer_receiver{id_receiver.peer_id(), id_receiver.display_name(),
+                                              spki_der_from_cert(id_receiver.cert()),
+                                              cert_der_from_cert(id_receiver.cert())};
+    REQUIRE(!peer_receiver.spki_der.empty());
+    REQUIRE(spoink::pairing::save_trusted_peer(db_sender, peer_receiver).has_value());
   }
 
   // Test file content.
@@ -148,18 +149,18 @@ TEST_CASE("TEST-E2E-001: pair + transfer one small file, byte-identical output",
   const auto& canonical = *manifest_r.value_if();
 
   // Install chunks into sender store.
-  const auto srk_s = rootS / "store";
+  const auto srk_s = root_sender / "store";
   std::filesystem::create_directories(srk_s);
   for (auto& chunk : mf.chunks) {
     REQUIRE(spoink::offline::install_verified_chunk(srk_s, chunk).has_value());
   }
 
-  const auto srk_r = rootR / "store";
-  const auto out_dir = rootR / "output";
+  const auto srk_r = root_receiver / "store";
+  const auto out_dir = root_receiver / "output";
   std::filesystem::create_directories(srk_r);
   std::filesystem::create_directories(out_dir);
 
-  auto meta_r = spoink::offline::MetadataStore::open(rootR);
+  auto meta_r = spoink::offline::MetadataStore::open(root_receiver);
   REQUIRE(meta_r.has_value());
   auto& meta = *meta_r.value_if();
 
@@ -174,14 +175,14 @@ TEST_CASE("TEST-E2E-001: pair + transfer one small file, byte-identical output",
     lo.port = kE2EPort;
     lo.handshake_timeout_ms = 10000;  // NOLINT(cppcoreguidelines-avoid-magic-numbers)
 
-    auto conn_r2 = spoink::transport::tls_accept_one(idR, lo, dbR);
+    auto conn_r2 = spoink::transport::tls_accept_one(id_receiver, lo, db_receiver);
     if (!conn_r2.has_value()) {
       recv_err = "tls_accept_one failed";
       return;
     }
     auto& conn = *conn_r2.value_if();
 
-    spoink::session::SessionStateMachine sm(spoink::session::Role::kReceiver, idR.peer_id(), 2U);
+    spoink::session::SessionStateMachine sm(spoink::session::Role::kReceiver, id_receiver.peer_id(), 2U);
     if (!flush_frames(sm.start(), conn)) {
       recv_err = "HELLO send failed";
       return;
@@ -374,14 +375,14 @@ TEST_CASE("TEST-E2E-001: pair + transfer one small file, byte-identical output",
     co.port = kE2EPort;
     co.handshake_timeout_ms = 10000;  // NOLINT(cppcoreguidelines-avoid-magic-numbers)
 
-    auto conn_s = spoink::transport::tls_connect(idS, co, dbS);
+    auto conn_s = spoink::transport::tls_connect(id_sender, co, db_sender);
     if (!conn_s.has_value()) {
       send_err = "tls_connect failed";
       return;
     }
     auto& conn = *conn_s.value_if();
 
-    spoink::session::SessionStateMachine sm(spoink::session::Role::kSender, idS.peer_id(), 1U);
+    spoink::session::SessionStateMachine sm(spoink::session::Role::kSender, id_sender.peer_id(), 1U);
     if (!flush_frames(sm.start(), conn)) {
       send_err = "HELLO send failed";
       return;
@@ -412,7 +413,7 @@ TEST_CASE("TEST-E2E-001: pair + transfer one small file, byte-identical output",
       fss.file_sha256 = canonical.files[0].digest.bytes();
       offer.files.push_back(std::move(fss));
 
-      spoink::session::StartSender start{idR.peer_id(), std::move(offer), canonical.bytes};
+      spoink::session::StartSender start{id_receiver.peer_id(), std::move(offer), canonical.bytes};
       if (!flush_frames(sm.process(std::move(start)), conn)) {
         send_err = "SESSION_OFFER failed";
         return;
@@ -528,8 +529,8 @@ TEST_CASE("TEST-E2E-001: pair + transfer one small file, byte-identical output",
   for (std::size_t i = 0; i < file_content.size(); ++i)
     REQUIRE(static_cast<unsigned char>(out_buf[i]) == static_cast<unsigned int>(file_content[i]));
 
-  sqlite3_close(dbS);
-  sqlite3_close(dbR);
-  std::filesystem::remove_all(rootS);
-  std::filesystem::remove_all(rootR);
+  sqlite3_close(db_sender);
+  sqlite3_close(db_receiver);
+  std::filesystem::remove_all(root_sender);
+  std::filesystem::remove_all(root_receiver);
 }

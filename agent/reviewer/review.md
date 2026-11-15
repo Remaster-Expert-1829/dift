@@ -280,3 +280,189 @@ the protocol's security and durability guarantees are not upheld end-to-end.  Th
 acceptance criteria from `agent/tasks/M2-001.md` are unmet (F3, F4, F5).
 
 **CHANGES_REQUIRED.** Address F1 and F2 as blockers before merge.
+
+---
+
+## M2-001 Iteration 2
+
+- Task ID: M2-001
+- Review iteration: 2
+- Reviewed branch: `feature/m2-001-secure-transfer`
+- Reviewed HEAD: `a5a1751` (docs(m2): update implementation report — Iteration 2 findings addressed)
+- PR: [#5](https://github.com/Remaster-Expert-1829/dift/pull/5)
+- CI run: [43720963999](https://github.com/Remaster-Expert-1829/dift/actions/runs/43720963999)
+- Verdict: **CHANGES_REQUIRED**
+
+---
+
+### Commit log (Iteration 2 above Iteration 1 head `ca7e8f0`)
+
+```
+a5a1751 docs(m2): update implementation report — Iteration 2 findings addressed
+379361d fix(m2): address reviewer iteration 1 findings (F1-F5)
+```
+
+Two commits; `379361d` is the fix commit (8 files, +815 / -19).  `a5a1751` is a
+documentation-only update to `agent/builder/implementation-report.md`.
+
+---
+
+### Hosted CI — run 43720963999
+
+| Job | Result |
+|---|---|
+| `repository-checks` | ✓ pass |
+| `build-and-test (ci-gcc)` | ✓ pass |
+| `build-and-test (ci-clang)` | ✓ pass |
+| `build-and-test (release)` | ✓ pass |
+| `clang-tidy` | ✗ **FAIL** |
+| `asan-ubsan` | ✓ pass |
+| `secrets` | ✓ pass |
+| `dependency-review` | ✓ pass |
+
+**7/8 jobs passed.  `clang-tidy` failed.**
+
+---
+
+### Iteration 1 findings — resolution status
+
+| ID | Description | Status |
+|---|---|---|
+| F1 | `session_capability` sent as all-zeros | **Resolved** |
+| F2 | `CHUNK_ACK` sent even when chunk store fails | **Resolved** |
+| F3 | Missing required test coverage | **Resolved** |
+| F4 | No M2 single-file enforcement in state machine | **Resolved** |
+| F5 | No `static_assert` for `kMaxPayloadBytes >= 65536` | **Resolved** |
+
+#### F1 — Verified resolved
+
+`RAND_bytes(session_cap.data(), 32)` populates `plan.session_capability` before
+`TransferPlanMsg` is sent (`src/cli/main.cpp:432–440`).  Receiver intercepts
+`kDataBind` before the state machine and verifies the echoed capability with
+`CRYPTO_memcmp` (`src/cli/main.cpp:349–381`).  Sender sends `DataBind` with the
+echoed cap and reads `DataBindResult` synchronously before sending any chunk
+(`src/cli/main.cpp:224–261`).  Token is never persisted.  Constant-time
+comparison is used throughout. ✓
+
+#### F2 — Verified resolved
+
+`ChunkStored` / `CHUNK_ACK` are only submitted inside the `install_r.has_value()`
+branch (`src/cli/main.cpp:471–498`).  The else branch submits `ChunkStoreFailed`
+to the state machine, which produces `CHUNK_NACK` sent to the sender, then returns
+error 1 (`src/cli/main.cpp:499–514`). ✓
+
+#### F3 — Verified resolved
+
+All four specifically-enumerated missing items are present:
+
+- `tests/security/sec_test.cpp` — TEST-SEC-001: two identities with empty trust
+  stores; both `tls_accept_one` and `tls_connect` must fail.  Port 19877. ✓
+- `tests/fuzz/fuzz_framing.cpp` — libFuzzer target; feeds arbitrary bytes into
+  `FrameReader::feed()` and `decode_prefix()`; enabled with
+  `-DSPOINK_ENABLE_FUZZING=ON`. ✓
+- `tests/integration/m2_e2e_test.cpp` — TEST-E2E-001: two in-process TLS
+  endpoints on loopback (port 19878), simulated pairing via `save_trusted_peer`,
+  100-byte file, full state machine protocol run, byte-identical output
+  verified. ✓
+- Non-Ed25519 key rejection test in `tests/unit/identity_test.cpp` — writes an
+  RSA-2048 PEM key to `state_root/identity/device.key`; verifies
+  `load_or_create_identity` returns error. ✓
+
+`CMakeLists.txt` registers `spoink_m2_e2e_test`, `spoink_security_tests`, and
+the guarded `spoink_fuzz_framing` targets. ✓
+
+#### F4 — Verified resolved
+
+`handle_session_offer()` now rejects `msg.file_count != 1` via
+`protocol_error("m2.sm.multi_file_unsupported")`
+(`src/session/state_machine.cpp:202–204`).  Comment on `kMaxFilesPerSession`
+updated to reference the M2 enforcement point. ✓
+
+#### F5 — Verified resolved
+
+`static_assert(Limits::kMaxPayloadBytes >= 65536U, ...)` added immediately after
+the `Limits` struct in `include/spoink/protocol/framing.h:35`.  Actual value is
+131072, so the assert passes. ✓
+
+---
+
+### New findings
+
+#### N-F1 — BLOCKER: `clang-tidy` CI job fails on Iteration 2 test files
+
+**CI evidence:** run 43720963999, job `clang-tidy`, `FAILURE`.
+
+Two new test files introduced violations that are promoted to errors by
+`WarningsAsErrors: '*'` in `.clang-tidy`.
+
+**`tests/security/sec_test.cpp`** (8 violations):
+
+| Location | Check | Variable |
+|---|---|---|
+| `:46` | `readability-identifier-naming` | `rootA` |
+| `:47` | `readability-identifier-naming` | `rootB` |
+| `:51` | `readability-identifier-naming` | `idA_r` |
+| `:53` | `readability-identifier-naming` | `idB_r` |
+| `:56` | `readability-identifier-naming` | `dbA` |
+| `:57` | `readability-identifier-naming` | `dbB` |
+| `:66` | `readability-identifier-naming` | `idA` |
+| `:86` | `bugprone-unchecked-optional-access` | `*server_rejected` |
+
+The `readability-identifier-naming` violations are because short capitalised
+suffixes (`A`, `B`) in variable names do not match the project's snake_case
+convention.  The `bugprone-unchecked-optional-access` fires on `*server_rejected`
+at line 86 even though `REQUIRE(server_rejected.has_value())` precedes it —
+clang-tidy cannot see through the macro.
+
+**`tests/integration/m2_e2e_test.cpp`** (10+ violations):
+
+| Location | Check | Variable |
+|---|---|---|
+| `:102` | `readability-identifier-naming` | `rootS` |
+| `:103` | `readability-identifier-naming` | `rootR` |
+| `:107` | `readability-identifier-naming` | `idS_r` |
+| `:109` | `readability-identifier-naming` | `idR_r` |
+| `:112` | `readability-identifier-naming` | `idS` |
+| `:113` | `readability-identifier-naming` | `idR` |
+| `:115` | `readability-identifier-naming` | `dbS` |
+| `:116` | `readability-identifier-naming` | `dbR` |
+| `:122` | `readability-identifier-naming` | `pS` |
+| `:127` | `readability-identifier-naming` | `pR` |
+
+Also: `cppcoreguidelines-pro-type-member-init` fired on
+`include/spoink/session/state_machine.h:79` for un-initialised fields
+`chunk_hash` and `transfer_id` in an event struct — this is a pre-existing issue
+in the header that was not visible to clang-tidy before because no translation
+unit that includes the header was added in prior fix rounds (the new test files
+are the first to trigger it).
+
+**Required fix:**
+
+1. Rename short-suffix variables in `sec_test.cpp` and `m2_e2e_test.cpp` to full
+   snake_case names (e.g. `root_a` → `root_sender`, `id_a_r` → `id_sender_r`,
+   `db_a` → `db_server`).
+2. Silence `bugprone-unchecked-optional-access` on the dereference that is
+   already guarded by `REQUIRE(…has_value())` with a `// NOLINT(bugprone-unchecked-optional-access)`
+   comment on that line, consistent with existing NOLINT usage in the project.
+3. Add default-member-initialisers to the affected event struct(s) in
+   `state_machine.h` to satisfy `cppcoreguidelines-pro-type-member-init`, or add
+   a targeted NOLINT if the struct is intentionally left with uninitialised fields.
+4. Run `clang-format-18` on all modified files and re-push.
+
+**Acceptance criteria after fix:** all 8 CI jobs pass on PR #5.
+
+---
+
+### Assessment
+
+All five Iteration 1 findings (F1–F5) are correctly resolved.  The security fixes
+(F1 session_capability, F2 durable ACK) are verified correct and consistent with
+the protocol design.  The state machine single-file enforcement (F4), static_assert
+(F5), and test infrastructure additions (F3) are all in place.
+
+The only blocker is the `clang-tidy` CI failure (N-F1) introduced by identifier-
+naming violations and one unchecked-optional-access diagnostic in the two new test
+files.  These are style violations, not logic errors; the fix is mechanical.
+
+**CHANGES_REQUIRED.**  Fix N-F1 (clang-tidy violations in `sec_test.cpp` and
+`m2_e2e_test.cpp`) and confirm all 8 CI jobs pass.  No other changes required.
