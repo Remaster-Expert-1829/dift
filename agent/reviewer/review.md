@@ -466,3 +466,82 @@ files.  These are style violations, not logic errors; the fix is mechanical.
 
 **CHANGES_REQUIRED.**  Fix N-F1 (clang-tidy violations in `sec_test.cpp` and
 `m2_e2e_test.cpp`) and confirm all 8 CI jobs pass.  No other changes required.
+
+---
+
+## M2-001 Iteration 3
+
+- Task ID: M2-001
+- Review iteration: 3
+- Reviewed branch: `feature/m2-001-secure-transfer`
+- Reviewed HEAD: `ab2faac` (fix(m2): fix clang-tidy violations in Iteration 2 test files (N-F1))
+- PR: [#5](https://github.com/Remaster-Expert-1829/dift/pull/5)
+- CI run: [43770168665](https://github.com/Remaster-Expert-1829/dift/actions/runs/43770168665)
+- Verdict: **APPROVED**
+
+---
+
+### Commit log (Iteration 3 above Iteration 2 head `a5a1751`)
+
+```
+ab2faac fix(m2): fix clang-tidy violations in Iteration 2 test files (N-F1)
+```
+
+One commit; diff covers four files (+250 / -63).  Three kinds of change:
+
+1. `tests/security/sec_test.cpp` and `tests/integration/m2_e2e_test.cpp` —
+   variable renames to snake_case, one `NOLINT` annotation.
+2. `include/spoink/session/state_machine.h` — default member initialisers added.
+3. `agent/reviewer/review.md` — Iteration 2 review appended.
+
+No logic changes.
+
+---
+
+### Hosted CI — run 43770168665
+
+| Job | Result |
+|---|---|
+| `repository-checks` | ✓ pass |
+| `build-and-test (ci-gcc)` | ✓ pass |
+| `build-and-test (ci-clang)` | ✓ pass |
+| `build-and-test (release)` | ✓ pass |
+| `clang-tidy` | ✓ pass |
+| `asan-ubsan` | ✓ pass |
+| `secrets` | ✓ pass |
+| `dependency-review` | ✓ pass |
+
+**All 8 jobs passed.**
+
+---
+
+### N-F1 resolution — verified
+
+**`tests/security/sec_test.cpp`:** all seven `readability-identifier-naming`
+violations resolved by renaming to full snake_case (`rootA` → `root_server`,
+`rootB` → `root_client`, `idA_r` → `id_server_r`, `idB_r` → `id_client_r`,
+`dbA` → `db_server`, `dbB` → `db_client`, `idA` → `id_server`).
+`bugprone-unchecked-optional-access` silenced with `// NOLINT(...)` on the
+dereference that is structurally guarded by `REQUIRE(…has_value())`. ✓
+
+**`tests/integration/m2_e2e_test.cpp`:** ten `readability-identifier-naming`
+violations resolved by renaming (`rootS` → `root_sender`, `rootR` →
+`root_receiver`, `idS_r` → `id_sender_r`, `idR_r` → `id_receiver_r`,
+`idS` → `id_sender`, `idR` → `id_receiver`, `dbS` → `db_sender`,
+`dbR` → `db_receiver`, `pS` → `peer_sender`, `pR` → `peer_receiver`). ✓
+
+**`include/spoink/session/state_machine.h`:** `cppcoreguidelines-pro-type-member-init`
+resolved by adding `{}` default initialisers to `chunk_hash` and `transfer_id`
+in both `ChunkStored` and `ChunkStoreFailed`. ✓
+
+`clang-tidy` job passes on run 43770168665. ✓
+
+---
+
+### Final assessment
+
+All Iteration 1 findings (F1–F5) were resolved in Iteration 2.  The single
+Iteration 2 finding (N-F1, clang-tidy CI failure) is resolved in this commit.
+All 8 hosted CI jobs pass.  No new issues found.
+
+**APPROVED.**  M2-001 is ready to merge.
