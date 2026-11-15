@@ -200,6 +200,9 @@ std::vector<Effect> SessionStateMachine::handle_session_offer(const protocol::Se
   if (state_ != State::kReady || role_ != Role::kReceiver) {
     return protocol_error("m2.sm.offer_order");
   }
+  if (msg.file_count != 1) {
+    return protocol_error("m2.sm.multi_file_unsupported");
+  }
   pending_offer_ = msg;
   state_ = State::kOfferPending;
   return {EffOfferReceived{msg}};

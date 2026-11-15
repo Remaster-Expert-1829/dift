@@ -16,6 +16,7 @@ struct Limits {
   static constexpr std::uint64_t kMaxPayloadBytes = 131072U;
   static constexpr std::uint64_t kMaxManifestBytes = 16777216U;
   static constexpr std::uint32_t kMaxPathBytes = 4096U;
+  // Protocol ceiling; M2 enforces file_count == 1 in handle_session_offer().
   static constexpr std::uint32_t kMaxFilesPerSession = 10000U;
   static constexpr std::uint32_t kMaxChunksPerSession = 1000000U;
   static constexpr std::uint32_t kMaxDataConnections = 8U;
@@ -30,6 +31,8 @@ struct Limits {
   static constexpr std::uint32_t kPairingTimeoutMs = 60000U;
   static constexpr std::uint32_t kPairingTimeoutMaxMs = 120000U;
 };
+
+static_assert(Limits::kMaxPayloadBytes >= 65536U, "kMaxPayloadBytes must cover rabin-v1 max chunk size");
 
 // ── Channel and message type constants ──────────────────────────────────────
 

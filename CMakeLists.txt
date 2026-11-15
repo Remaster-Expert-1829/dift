@@ -160,6 +160,27 @@ if(BUILD_TESTING)
     spoink::pairing spoink::session spoink::transport spoink::offline Catch2::Catch2WithMain)
   set_target_properties(spoink_m2_integration_test PROPERTIES CXX_EXTENSIONS OFF)
   catch_discover_tests(spoink_m2_integration_test)
+
+  add_executable(spoink_m2_e2e_test tests/integration/m2_e2e_test.cpp)
+  target_link_libraries(spoink_m2_e2e_test PRIVATE
+    spoink::identity spoink::pairing spoink::session spoink::transport spoink::offline
+    Catch2::Catch2WithMain)
+  set_target_properties(spoink_m2_e2e_test PROPERTIES CXX_EXTENSIONS OFF)
+  catch_discover_tests(spoink_m2_e2e_test)
+
+  add_executable(spoink_security_tests tests/security/sec_test.cpp)
+  target_link_libraries(spoink_security_tests PRIVATE
+    spoink::identity spoink::transport spoink::pairing Catch2::Catch2WithMain)
+  set_target_properties(spoink_security_tests PROPERTIES CXX_EXTENSIONS OFF)
+  catch_discover_tests(spoink_security_tests)
+
+  if(SPOINK_ENABLE_FUZZING)
+    add_executable(spoink_fuzz_framing tests/fuzz/fuzz_framing.cpp)
+    target_link_libraries(spoink_fuzz_framing PRIVATE spoink::protocol)
+    target_compile_options(spoink_fuzz_framing PRIVATE -fsanitize=fuzzer,address)
+    target_link_options(spoink_fuzz_framing PRIVATE -fsanitize=fuzzer,address)
+    set_target_properties(spoink_fuzz_framing PROPERTIES CXX_EXTENSIONS OFF)
+  endif()
 endif()
 
 # EXP-CDC-001 benchmark and golden-vector generator — built unconditionally

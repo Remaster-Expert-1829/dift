@@ -1,3 +1,4 @@
+#include <openssl/crypto.h>
 #include <openssl/rand.h>
 #include <sqlite3.h>
 #include <unistd.h>
@@ -222,6 +223,41 @@ int run_sender_session(spoink::transport::TlsConnection& conn, const spoink::ide
         }
       } else if (const auto* eplan = std::get_if<spoink::session::EffPlanReceived>(&eff)) {
         plan = eplan->plan;
+        // DATA_BIND exchange: echo session_capability back to receiver.
+        {
+          spoink::protocol::DataBindMsg bind_msg;
+          bind_msg.transfer_id = plan->transfer_id;
+          bind_msg.session_capability = plan->session_capability;
+          auto bind_hdr = spoink::protocol::encode_data_bind(bind_msg);
+          spoink::protocol::FramePrefix bind_pfx;
+          bind_pfx.channel = spoink::protocol::Channel::kData;
+          bind_pfx.message_type = spoink::protocol::MessageType::kDataBind;
+          bind_pfx.header_length = static_cast<std::uint32_t>(bind_hdr.size());
+          bind_pfx.payload_length = 0;
+          bind_pfx.request_id = 0;
+          if (!conn.send_frame(bind_pfx, bind_hdr, {}).has_value()) {
+            std::cerr << "error: failed to send DATA_BIND\n";
+            return 1;
+          }
+          auto res_r = conn.read_frame();
+          if (!res_r.has_value()) {
+            std::cerr << "error: connection closed waiting for DATA_BIND_RESULT\n";
+            return 1;
+          }
+          auto [res_pfx, res_body] = std::move(*res_r.value_if());
+          std::vector<std::byte> res_hdr2;
+          std::vector<std::byte> res_pld2;
+          split_body(res_pfx, res_body, res_hdr2, res_pld2);
+          if (res_pfx.message_type != spoink::protocol::MessageType::kDataBindResult) {
+            std::cerr << "error: expected DATA_BIND_RESULT\n";
+            return 1;
+          }
+          auto bind_res_r = spoink::protocol::decode_data_bind_result(res_hdr2);
+          if (!bind_res_r.has_value() || !bind_res_r.value_if()->accepted) {
+            std::cerr << "error: DATA_BIND rejected by receiver\n";
+            return 1;
+          }
+        }
         // Send all missing chunks immediately
         for (const auto& chunk_hash : plan->missing_chunk_hashes) {
           spoink::support::Sha256Digest digest{chunk_hash};
@@ -313,6 +349,33 @@ int run_receiver_session(spoink::transport::TlsConnection& conn, const spoink::i
     std::vector<std::byte> pld;
     split_body(pfx, body, hdr, pld);
 
+    // Intercept DATA_BIND before state machine: verify echoed session_capability.
+    if (pfx.message_type == spoink::protocol::MessageType::kDataBind) {
+      auto bind_r = spoink::protocol::decode_data_bind(hdr);
+      spoink::protocol::DataBindResultMsg result_msg;
+      if (!bind_r.has_value() || !sent_plan.has_value() ||
+          CRYPTO_memcmp(bind_r.value_if()->session_capability.data(), sent_plan->session_capability.data(), 32) != 0) {
+        result_msg.accepted = false;
+        result_msg.error_code = "m2.bind.capability_mismatch";
+      } else {
+        result_msg.accepted = true;
+      }
+      auto res_hdr = spoink::protocol::encode_data_bind_result(result_msg);
+      spoink::protocol::FramePrefix res_pfx;
+      res_pfx.channel = spoink::protocol::Channel::kData;
+      res_pfx.message_type = spoink::protocol::MessageType::kDataBindResult;
+      res_pfx.header_length = static_cast<std::uint32_t>(res_hdr.size());
+      res_pfx.payload_length = 0;
+      res_pfx.request_id = 0;
+      (void)conn.send_frame(res_pfx, res_hdr, {});
+      if (!result_msg.accepted) {
+        std::cerr << "error: session capability mismatch in DATA_BIND\n";
+        conn.close();
+        return 1;
+      }
+      continue;
+    }
+
     auto effects = sm.process(spoink::session::MsgIn{pfx, std::move(hdr), std::move(pld)});
 
     // We may need to inject additional inputs into SM within this loop
@@ -360,7 +423,15 @@ int run_receiver_session(spoink::transport::TlsConnection& conn, const spoink::i
 
           spoink::protocol::TransferPlanMsg plan;
           plan.transfer_id = emdata->transfer_id;
-          plan.session_capability = {};
+          {
+            std::array<std::byte, 32> session_cap{};
+            if (RAND_bytes(reinterpret_cast<unsigned char*>(session_cap.data()), 32) != 1) {
+              std::cerr << "error: RAND_bytes failed for session capability\n";
+              conn.close();
+              return 1;
+            }
+            plan.session_capability = session_cap;
+          }
           plan.plan_part = 0;
           plan.plan_final = true;
 
@@ -400,26 +471,37 @@ int run_receiver_session(spoink::transport::TlsConnection& conn, const spoink::i
         auto install_r = spoink::offline::install_verified_chunk(srk, chunk_obj);
         if (install_r.has_value()) {
           (void)meta.record_verified(digest, static_cast<std::uint64_t>(echunk->payload.size()));
-        }
-
-        spoink::session::ChunkStored cs{};
-        cs.chunk_hash = echunk->chunk_hash;
-        cs.transfer_id = echunk->transfer_id;
-        auto ack_effects = sm.process(cs);
-        for (const auto& ae : ack_effects) {
-          if (const auto* sf = std::get_if<spoink::session::EffSendFrame>(&ae)) {
-            if (!conn.send_frame(sf->prefix, sf->header, sf->payload).has_value()) {
-              std::cerr << "error: failed to send CHUNK_ACK\n";
-              return 1;
+          spoink::session::ChunkStored cs{};
+          cs.chunk_hash = echunk->chunk_hash;
+          cs.transfer_id = echunk->transfer_id;
+          auto ack_effects = sm.process(cs);
+          for (const auto& ae : ack_effects) {
+            if (const auto* sf = std::get_if<spoink::session::EffSendFrame>(&ae)) {
+              if (!conn.send_frame(sf->prefix, sf->header, sf->payload).has_value()) {
+                std::cerr << "error: failed to send CHUNK_ACK\n";
+                return 1;
+              }
             }
           }
-        }
-
-        ++chunks_stored;
-        std::cerr << "  chunk " << chunks_stored << '/' << total_missing << " stored\n";
-
-        if (chunks_stored == total_missing) {
-          inject_results = true;
+          ++chunks_stored;
+          std::cerr << "  chunk " << chunks_stored << '/' << total_missing << " stored\n";
+          if (chunks_stored == total_missing) {
+            inject_results = true;
+          }
+        } else {
+          spoink::session::ChunkStoreFailed csf{};
+          csf.chunk_hash = echunk->chunk_hash;
+          csf.transfer_id = echunk->transfer_id;
+          csf.error_code = "m2.store.write_failed";
+          csf.retryable = false;
+          auto nack_effects = sm.process(csf);
+          for (const auto& ae : nack_effects) {
+            if (const auto* sf = std::get_if<spoink::session::EffSendFrame>(&ae)) {
+              (void)conn.send_frame(sf->prefix, sf->header, sf->payload);
+            }
+          }
+          std::cerr << "error: failed to store chunk\n";
+          return 1;
         }
       } else if (std::get_if<spoink::session::EffCloseConn>(&eff)) {
         done = true;
