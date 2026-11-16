@@ -314,3 +314,46 @@ Iterations 4 through 6 repair Independent Review iterations 7 and 8: every affec
 ## Acceptance-criteria status (M0)
 
 All M0 criteria passed. M0 is closed. See M0-001 review record.
+
+---
+
+## M2-001 Iteration 2
+
+- **Task ID:** `M2-001`
+- **Branch:** `feature/m2-001-secure-transfer`
+- **Commit:** `379361d`
+- **Report date:** 2026-11-15
+- **Status:** `READY_FOR_REVIEW`
+
+### Reviewer findings addressed (Iteration 1 → Iteration 2)
+
+| Finding | Severity | Fix |
+|---------|----------|-----|
+| F1 — `session_capability` sent as all-zeros | BLOCKER | Generated 32-byte random token with `RAND_bytes` before sending `TRANSFER_PLAN`. Added DATA_BIND exchange: receiver intercepts `kDataBind`, verifies echoed cap with `CRYPTO_memcmp`, sends `DataBindResult`. Sender sends `DataBind` after `EffPlanReceived`, reads and verifies `DataBindResult` before sending chunks. Token never persisted to disk. |
+| F2 — `CHUNK_ACK` sent even when chunk store fails | BLOCKER | `ChunkStored` / `CHUNK_ACK` are now only submitted when `install_verified_chunk()` returns success. On failure, `ChunkStoreFailed` is submitted to the state machine (yielding `CHUNK_NACK`) and the receiver returns error. |
+| F3 — Missing required tests | HIGH | Added `tests/security/sec_test.cpp` (TEST-SEC-001: untrusted peer connection rejected), `tests/fuzz/fuzz_framing.cpp` (libFuzzer target for `FrameReader::feed()` and `decode_prefix()`), `tests/integration/m2_e2e_test.cpp` (TEST-E2E-001: full loopback pair+transfer+verify), and a non-Ed25519 key rejection test in `tests/unit/identity_test.cpp`. `CMakeLists.txt` updated with `spoink_m2_e2e_test`, `spoink_security_tests`, and optional `spoink_fuzz_framing` targets. |
+| F4 — `kMaxFilesPerSession = 10000` with no M2 single-file enforcement | MEDIUM | Added `if (msg.file_count != 1) return protocol_error("m2.sm.multi_file_unsupported");` in `handle_session_offer()`. Updated `kMaxFilesPerSession` comment to note the M2 enforcement point. |
+| F5 — No `static_assert` for `kMaxPayloadBytes >= rabin-v1 max chunk size` | LOW | Added `static_assert(Limits::kMaxPayloadBytes >= 65536U, "kMaxPayloadBytes must cover rabin-v1 max chunk size");` in `framing.h`. |
+
+### Files modified
+
+| File | Change |
+|------|--------|
+| `src/cli/main.cpp` | F1: RAND_bytes cap generation + DATA_BIND exchange (receiver + sender). F2: conditional ChunkStored/ChunkStoreFailed. Added `#include <openssl/crypto.h>`. |
+| `src/session/state_machine.cpp` | F4: `file_count == 1` enforcement in `handle_session_offer()`. |
+| `include/spoink/protocol/framing.h` | F4: comment update on `kMaxFilesPerSession`. F5: `static_assert`. |
+| `tests/unit/identity_test.cpp` | F3: non-Ed25519 key rejection test. |
+| `tests/security/sec_test.cpp` | F3: TEST-SEC-001 (new file). |
+| `tests/fuzz/fuzz_framing.cpp` | F3: libFuzzer target (new file). |
+| `tests/integration/m2_e2e_test.cpp` | F3: TEST-E2E-001 (new file). |
+| `CMakeLists.txt` | F3: `spoink_m2_e2e_test`, `spoink_security_tests`, `spoink_fuzz_framing` targets. |
+
+### Test results
+
+All 100 tests pass (including 3 new tests): `ctest` on `build/dev` — 100% pass, 14.42 s total.
+
+| New test | Result |
+|----------|--------|
+| TEST-SEC-001: untrusted peer is rejected on connect | PASS |
+| TEST-E2E-001: pair + transfer one small file, byte-identical output | PASS |
+| load_or_create_identity: rejects non-Ed25519 key | PASS |
